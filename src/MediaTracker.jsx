@@ -1086,7 +1086,7 @@ const MediaTracker = () => {
   return (
     <div
       id="app-top"
-      className="min-h-screen text-white flex flex-col"
+      className="min-h-screen w-full text-white flex flex-col"
       style={{
         background: 'linear-gradient(135deg, var(--mt-primary), rgba(15,23,42,1))',
         touchAction: 'pan-y',
@@ -1103,9 +1103,9 @@ const MediaTracker = () => {
           onTouchEnd={handleHeaderActivate}
           aria-label="Scroll to top"
           title="Scroll to top"
-          className="fixed top-0 left-0 right-0 z-40 bg-slate-800/50 backdrop-blur border-b border-slate-700 cursor-pointer"
+          className="fixed top-0 left-0 right-0 w-full z-40 bg-slate-800/50 backdrop-blur border-b border-slate-700 cursor-pointer"
         >
-          <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
+          <div className="w-full max-w-7xl mx-auto px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
                 <img src="./logo_white.svg" alt="logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
@@ -1410,7 +1410,7 @@ const MediaTracker = () => {
           />
         </div>
       ) : (
-        <div className="flex-1 max-w-7xl mx-auto px-4 py-4 sm:py-6">
+        <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-4 sm:py-6">
           {/* Search and Type Filters */}
           <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-0 sm:flex sm:gap-4">
             <div className="flex-1 relative">
