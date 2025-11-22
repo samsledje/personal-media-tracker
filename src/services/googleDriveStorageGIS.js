@@ -904,9 +904,12 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
     }
 
     try {
+      // Escape filename for use in query - escape both backslashes and single quotes
+      const escapedFilename = filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      
       // Find the file in trash folder
       const searchResponse = await window.gapi.client.drive.files.list({
-        q: `name='${filename.replace(/'/g, "\\'")}' and '${this.trashFolderId}' in parents and trashed=false`,
+        q: `name='${escapedFilename}' and '${this.trashFolderId}' in parents and trashed=false`,
         fields: 'files(id, name)'
       });
 
@@ -918,7 +921,7 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
 
       // Check if a file with the same name already exists in the main folder
       const existingResponse = await window.gapi.client.drive.files.list({
-        q: `name='${filename.replace(/'/g, "\\'")}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
+        q: `name='${escapedFilename}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
         fields: 'files(id, name)'
       });
 

@@ -385,7 +385,7 @@ export class FileSystemStorage extends StorageAdapter {
           try {
             const file = await entry.getFile();
             const content = await file.text();
-            const { metadata, body } = parseMarkdown(content);
+            const { metadata } = parseMarkdown(content);
 
             trashedItems.push({
               id: entry.name.replace('.md', ''),
