@@ -366,4 +366,125 @@ export class FileSystemStorage extends StorageAdapter {
       throw err;
     }
   }
+
+  /**
+   * List all items in the trash
+   * @returns {Promise<object[]>} Array of trashed items with metadata
+   */
+  async listTrash() {
+    if (!this.directoryHandle) {
+      throw new Error('Please select a directory first');
+    }
+
+    try {
+      const trashDir = await this._getOrCreateTrashDir();
+      const trashedItems = [];
+
+      for await (const entry of trashDir.values()) {
+        if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+          try {
+            const file = await entry.getFile();
+            const content = await file.text();
+            const { metadata, body } = parseMarkdown(content);
+
+            trashedItems.push({
+              id: entry.name.replace('.md', ''),
+              filename: entry.name,
+              title: metadata.title || 'Untitled',
+              type: metadata.type || 'book',
+              author: metadata.author,
+              director: metadata.director,
+              year: metadata.year,
+              deletedAt: file.lastModified,
+              size: file.size
+            });
+          } catch (err) {
+            console.error(`Error loading trash item ${entry.name}:`, err);
+          }
+        }
+      }
+
+      return trashedItems.sort((a, b) => b.deletedAt - a.deletedAt);
+    } catch (err) {
+      console.error('Error listing trash:', err);
+      throw new Error(`Error listing trash: ${err.message}`);
+    }
+  }
+
+  /**
+   * Restore an item from trash by filename
+   * @param {string} filename - Filename of the item to restore
+   * @returns {Promise<string>} Restored item identifier
+   */
+  async restoreFromTrash(filename) {
+    if (!this.directoryHandle) {
+      throw new Error('Please select a directory first');
+    }
+
+    try {
+      const trashDir = await this._getOrCreateTrashDir();
+      const trashFile = await trashDir.getFileHandle(filename);
+      const file = await trashFile.getFile();
+
+      // Restore to original name; if it exists, append timestamp
+      let restoreName = filename;
+      try {
+        await this.directoryHandle.getFileHandle(restoreName);
+        restoreName = `${restoreName.replace(/\.md$/, '')}-restored-${Date.now()}.md`;
+      } catch (e) {
+        // not found -> ok
+      }
+
+      const dest = await this.directoryHandle.getFileHandle(restoreName, { create: true });
+      const writable = await dest.createWritable();
+      await writable.write(await file.text());
+      await writable.close();
+
+      // remove from trash
+      await trashDir.removeEntry(filename);
+
+      return restoreName;
+    } catch (err) {
+      console.error('Error restoring from trash:', err);
+      throw new Error(`Error restoring file: ${err.message}`);
+    }
+  }
+
+  /**
+   * Permanently delete all items from trash
+   * @returns {Promise<number>} Number of items deleted
+   */
+  async emptyTrash() {
+    if (!this.directoryHandle) {
+      throw new Error('Please select a directory first');
+    }
+
+    try {
+      const trashDir = await this._getOrCreateTrashDir();
+      let deleteCount = 0;
+
+      // Collect all entries first
+      const entries = [];
+      for await (const entry of trashDir.values()) {
+        if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+          entries.push(entry.name);
+        }
+      }
+
+      // Delete all entries
+      for (const entryName of entries) {
+        try {
+          await trashDir.removeEntry(entryName);
+          deleteCount++;
+        } catch (err) {
+          console.error(`Error deleting ${entryName}:`, err);
+        }
+      }
+
+      return deleteCount;
+    } catch (err) {
+      console.error('Error emptying trash:', err);
+      throw new Error(`Error emptying trash: ${err.message}`);
+    }
+  }
 }
