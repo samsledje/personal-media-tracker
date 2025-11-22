@@ -327,6 +327,279 @@ describe('filterUtils', () => {
       const result = sortItems(itemsNoYear, SORT_OPTIONS.YEAR, SORT_ORDERS.ASC);
       expect(result).toHaveLength(2);
     });
+
+    // Secondary sort tests
+    describe('secondary sort by date consumed', () => {
+      it('should apply secondary sort when primary sort values are equal - status sort', () => {
+        const itemsWithSameStatus = [
+          {
+            id: '1',
+            title: 'Book A',
+            type: 'book',
+            status: 'read',
+            rating: 5,
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Book B',
+            type: 'book',
+            status: 'read',
+            rating: 4,
+            dateRead: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Book C',
+            type: 'book',
+            status: 'read',
+            rating: 3,
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameStatus, SORT_OPTIONS.STATUS, SORT_ORDERS.ASC);
+        // All have same status, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should apply secondary sort when primary sort values are equal - rating sort', () => {
+        const itemsWithSameRating = [
+          {
+            id: '1',
+            title: 'Item A',
+            type: 'book',
+            rating: 5,
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Item B',
+            type: 'movie',
+            rating: 5,
+            dateWatched: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Item C',
+            type: 'book',
+            rating: 5,
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameRating, SORT_OPTIONS.RATING, SORT_ORDERS.DESC);
+        // All have rating 5, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should apply secondary sort when primary sort values are equal - year sort', () => {
+        const itemsWithSameYear = [
+          {
+            id: '1',
+            title: 'Item A',
+            year: '2020',
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Item B',
+            year: '2020',
+            dateWatched: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Item C',
+            year: '2020',
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameYear, SORT_OPTIONS.YEAR, SORT_ORDERS.ASC);
+        // All have year 2020, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should apply secondary sort when primary sort values are equal - title sort', () => {
+        const itemsWithSameTitle = [
+          {
+            id: '1',
+            title: 'Same Title',
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Same Title',
+            dateWatched: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Same Title',
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameTitle, SORT_OPTIONS.TITLE, SORT_ORDERS.ASC);
+        // All have same title, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should apply secondary sort when primary sort values are equal - author sort', () => {
+        const itemsWithSameAuthor = [
+          {
+            id: '1',
+            title: 'Book A',
+            author: 'John Doe',
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Book B',
+            author: 'John Doe',
+            dateRead: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Book C',
+            author: 'John Doe',
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameAuthor, SORT_OPTIONS.AUTHOR, SORT_ORDERS.ASC);
+        // All have same author, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should apply secondary sort when primary sort values are equal - date added sort', () => {
+        const itemsWithSameDateAdded = [
+          {
+            id: '1',
+            title: 'Item A',
+            dateAdded: '2024-01-01',
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Item B',
+            dateAdded: '2024-01-01',
+            dateWatched: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Item C',
+            dateAdded: '2024-01-01',
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsWithSameDateAdded, SORT_OPTIONS.DATE_ADDED, SORT_ORDERS.ASC);
+        // All have same date added, so should be sorted by date consumed descending
+        expect(result[0].id).toBe('2'); // 2024-03-15 (most recent)
+        expect(result[1].id).toBe('3'); // 2024-02-15
+        expect(result[2].id).toBe('1'); // 2024-01-15
+      });
+
+      it('should handle items without date consumed in secondary sort', () => {
+        const itemsMixedDates = [
+          {
+            id: '1',
+            title: 'Item A',
+            rating: 5,
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '2',
+            title: 'Item B',
+            rating: 5,
+            // No date consumed
+          },
+          {
+            id: '3',
+            title: 'Item C',
+            rating: 5,
+            dateWatched: '2024-03-15',
+          },
+        ];
+        
+        const result = sortItems(itemsMixedDates, SORT_OPTIONS.RATING, SORT_ORDERS.DESC);
+        // Items with dates should come before items without dates (descending order)
+        expect(result[0].id).toBe('3'); // 2024-03-15
+        expect(result[1].id).toBe('1'); // 2024-01-15
+        expect(result[2].id).toBe('2'); // No date (0)
+      });
+
+      it('should maintain primary sort order when different primary values', () => {
+        const itemsDifferentRatings = [
+          {
+            id: '1',
+            title: 'Item A',
+            rating: 3,
+            dateRead: '2024-03-15', // Most recent, but lower rating
+          },
+          {
+            id: '2',
+            title: 'Item B',
+            rating: 5,
+            dateRead: '2024-01-15',
+          },
+          {
+            id: '3',
+            title: 'Item C',
+            rating: 4,
+            dateRead: '2024-02-15',
+          },
+        ];
+        
+        const result = sortItems(itemsDifferentRatings, SORT_OPTIONS.RATING, SORT_ORDERS.DESC);
+        // Primary sort by rating should take precedence
+        expect(result[0].rating).toBe(5);
+        expect(result[1].rating).toBe(4);
+        expect(result[2].rating).toBe(3);
+      });
+
+      it('should work with both dateRead and dateWatched for movies and books', () => {
+        const mixedItems = [
+          {
+            id: '1',
+            title: 'Book',
+            type: 'book',
+            status: 'read',
+            dateRead: '2024-02-15',
+          },
+          {
+            id: '2',
+            title: 'Movie',
+            type: 'movie',
+            status: 'watched',
+            dateWatched: '2024-03-15', // Most recent
+          },
+          {
+            id: '3',
+            title: 'Book',
+            type: 'book',
+            status: 'read',
+            dateRead: '2024-01-15',
+          },
+        ];
+        
+        const result = sortItems(mixedItems, SORT_OPTIONS.STATUS, SORT_ORDERS.ASC);
+        // Both 'watched' and 'read' are in same tier, secondary sort applies
+        expect(result[0].id).toBe('2'); // 2024-03-15 (movie)
+        expect(result[1].id).toBe('1'); // 2024-02-15 (book)
+        expect(result[2].id).toBe('3'); // 2024-01-15 (book)
+      });
+    });
   });
 
   describe('getAllTags', () => {
