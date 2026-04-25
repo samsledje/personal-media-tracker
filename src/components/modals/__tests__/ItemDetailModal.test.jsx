@@ -87,6 +87,20 @@ describe('ItemDetailModal', () => {
   });
 
   describe('edit mode', () => {
+    it('should start in edit mode when initialEditMode is true', () => {
+      render(<ItemDetailModal {...defaultProps} initialEditMode={true} />);
+
+      expect(screen.getByTitle('Save')).toBeInTheDocument();
+      expect(screen.queryByTitle('Edit')).not.toBeInTheDocument();
+    });
+
+    it('should start in view mode when initialEditMode is false', () => {
+      render(<ItemDetailModal {...defaultProps} initialEditMode={false} />);
+
+      expect(screen.getByTitle('Edit')).toBeInTheDocument();
+      expect(screen.queryByTitle('Save')).not.toBeInTheDocument();
+    });
+
     it('should switch to edit mode when edit button clicked', async () => {
       const user = userEvent.setup();
       render(<ItemDetailModal {...defaultProps} />);

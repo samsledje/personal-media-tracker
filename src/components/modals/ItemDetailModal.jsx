@@ -14,8 +14,8 @@ import { useHalfStars } from '../../hooks/useHalfStars.js';
 /**
  * Modal for viewing and editing item details
  */
-const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRgba, highlightColor, items = [], onNavigate, allTags = [] }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRgba, highlightColor, items = [], onNavigate, allTags = [], initialEditMode = false }) => {
+  const [isEditing, setIsEditing] = useState(initialEditMode);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isFetchingCover, setIsFetchingCover] = useState(false);
