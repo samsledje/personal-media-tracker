@@ -11,7 +11,7 @@ The app is **AI agent written** with human oversight. Keeping this file accurate
 ## Tech Stack
 
 | Concern | Tool |
-|---|---|
+| --- | --- |
 | Framework | React 19 + Vite (rolldown-vite) |
 | Styling | Tailwind CSS 3 |
 | Icons | lucide-react |
@@ -29,7 +29,7 @@ The app is **AI agent written** with human oversight. Keeping this file accurate
 
 ### Directory Map
 
-```
+```text
 src/
 ├── MediaTracker.jsx        # Main orchestration component (~1978 lines). NOT in coverage.
 ├── App.jsx                 # Root wrapper with ToastProvider. NOT in coverage.
@@ -97,7 +97,7 @@ src/
 
 ### Data Flow
 
-```
+```text
 MediaTracker (orchestrator)
   ├── useItems          → storageAdapter (FileSystem | GoogleDrive)
   │                       ↓ reads/writes .md files with YAML frontmatter
@@ -111,6 +111,7 @@ MediaTracker (orchestrator)
 ### Storage Adapter Pattern
 
 All storage backends implement the abstract interface in `storageAdapter.js`:
+
 - `initialize()`, `isConnected()`, `selectStorage()`, `loadItems()`, `saveItem(item)`, `deleteItem(id)`, `writeFile(path, content)`, `fileExists(path)`
 
 `useItems.js` only talks to the adapter — it never references FileSystem or Drive directly.
@@ -156,7 +157,7 @@ npm run test:e2e          # Playwright (stubs only, not reliable)
 
 ### Coverage Thresholds
 
-```
+```text
 lines: 85%  |  functions: 68%  |  branches: 80%  |  statements: 85%
 ```
 
@@ -185,7 +186,7 @@ These are enforced in CI. If your changes drop coverage below these, the build f
 ### Known Pre-existing Issues
 
 - **Test isolation flakiness**: Some tests fail when run in the full suite but pass in isolation. This is a mock leak problem, not a logic bug. The `localStorage` mock in `setup.js` is shared and not cleared between test files by default.
-- **Playwright E2E stubs**: All 6 spec files in `tests/e2e/` are placeholder stubs that verify the landing page loads. They are not reliable regression tests. Use Vitest integration tests instead.
+- **Playwright E2E stubs**: All 6 spec files in `tests/e2e/` are placeholder stubs. The `e2e-smoke` CI job has been removed — Playwright is not run in CI. Use Vitest integration tests for regression coverage instead.
 
 ### How to Write a New Test
 
