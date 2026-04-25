@@ -3,11 +3,12 @@ import { X, Save } from 'lucide-react';
 import EditForm from '../forms/EditForm.jsx';
 import { STATUS_TYPES } from '../../constants/index.js';
 import { toast } from '../../services/toastService.js';
+import { isDuplicate } from '../../utils/commonUtils.js';
 
 /**
  * Modal for adding new items
  */
-const AddEditModal = ({ onClose, onSave, initialItem = null, allTags = [] }) => {
+const AddEditModal = ({ onClose, onSave, onDuplicate, initialItem = null, allTags = [], allItems = [] }) => {
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
@@ -65,6 +66,12 @@ const AddEditModal = ({ onClose, onSave, initialItem = null, allTags = [] }) => 
   const handleSave = () => {
     if (!item.title) {
       toast('Title is required', { type: 'error' });
+      return;
+    }
+    const duplicate = allItems.find((it) => isDuplicate([it], item));
+    if (duplicate) {
+      toast(`"${item.title}" is already in your library`, { type: 'warning' });
+      onDuplicate?.(duplicate);
       return;
     }
     onSave(item);

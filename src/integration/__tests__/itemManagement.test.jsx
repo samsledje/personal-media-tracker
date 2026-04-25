@@ -5,9 +5,11 @@
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import MediaTracker from '../../MediaTracker.jsx';
+import { useItems } from '../../hooks/useItems.js';
 import * as openLibraryService from '../../services/openLibraryService.js';
 import * as omdbService from '../../services/omdbService.js';
 
@@ -535,399 +537,164 @@ describe('Item Management Integration Tests', () => {
   });
 
   describe('Edit Item Flow', () => {
-    it.skip('should edit an existing item', async () => {
-      // SKIP: Item detail modal requires complex keyboard interactions that don't work reliably in JSDOM
-      // Setup existing items with all required fields
-      const existingItems = [
-        {
-          id: 'the-great-gatsby',
-          filename: 'the-great-gatsby.md',
-          title: 'The Great Gatsby',
-          type: 'book',
-          author: 'F. Scott Fitzgerald',
-          year: 1925,
-          status: 'to-read',
-          rating: 0,
-          tags: ['classic'],
-          dateAdded: new Date().toISOString(),
-          review: ''
-        }
-      ];
+    it('should save an updated item via useItems hook', async () => {
+      const existingItem = {
+        id: 'the-great-gatsby',
+        filename: 'the-great-gatsby.md',
+        title: 'The Great Gatsby',
+        type: 'book',
+        author: 'F. Scott Fitzgerald',
+        year: 1925,
+        status: 'to-read',
+        rating: 0,
+        tags: ['classic'],
+        dateAdded: new Date().toISOString(),
+        review: ''
+      };
 
       mockStorage.loadItems.mockImplementation((progressCallback) => {
         if (progressCallback) {
-          progressCallback({ processed: 1, total: 1, items: existingItems });
+          progressCallback({ processed: 1, total: 1, items: [existingItem] });
         }
-        return Promise.resolve(existingItems);
+        return Promise.resolve([existingItem]);
       });
 
-      render(<MediaTracker />);
+      const { result } = renderHook(() => useItems());
 
-      // Setup storage
-      const filesystemButton = await screen.findByRole('button', { name: /local files/i }, { timeout: 3000 });
-      await user.click(filesystemButton);
+      await act(async () => {
+        await result.current.initializeStorage();
+      });
 
-      // Wait for items to load - be more specific about finding the card
-      await waitFor(() => {
-        const title = screen.getByText('The Great Gatsby');
-        expect(title).toBeInTheDocument();
-      }, { timeout: 5000 });
+      await act(async () => {
+        await result.current.selectStorage('filesystem');
+      });
 
-      // Click directly on the title text - ItemCard has onClick on the root div
-      // so clicking any child should trigger it
-      const itemTitle = screen.getByText('The Great Gatsby');
-      await user.click(itemTitle);
+      // Edit the item
+      const updatedItem = { ...existingItem, status: 'read', rating: 5, tags: ['classic', 'must-read'] };
+      await act(async () => {
+        await result.current.saveItem(updatedItem);
+      });
 
-      // Wait for detail modal to open - check for modal-specific element to avoid ambiguity
-      await waitFor(() => {
-        // Look for the edit button which is only in the detail modal
-        expect(screen.getByRole('button', { name: /edit item/i })).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Press 'e' key to enter edit mode
-      await user.keyboard('e');
-
-      // Should switch to edit mode in the modal
-      await waitFor(() => {
-        const titleInput = screen.getByPlaceholderText(/enter title/i);
-        expect(titleInput).toBeInTheDocument();
-        expect(titleInput).toHaveValue('The Great Gatsby');
-      }, { timeout: 5000 });
-
-      // Update status to "read"
-      const readButton = screen.getByRole('button', { name: /^read$/i });
-      await user.click(readButton);
-
-      // Update rating to 5
-      const starButtons = screen.getAllByRole('button').filter(btn => 
-        btn.querySelector('svg') && btn.querySelector('svg').classList.contains('w-8')
+      expect(mockStorage.saveItem).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'read', rating: 5, tags: ['classic', 'must-read'] })
       );
-      await user.click(starButtons[4]); // 5th star
-
-      // Add a tag
-      const tagsInput = screen.getByPlaceholderText(/add tag/i);
-      await user.click(tagsInput);
-      await user.paste('must-read');
-      await user.keyboard('{Enter}');
-      // Wait for the tag to appear
-      await waitFor(() => {
-        expect(screen.getByText('must-read')).toBeInTheDocument();
-      });
-
-      // Add notes
-      const notesInput = screen.getByPlaceholderText(/write your review/i);
-      await user.click(notesInput);
-      await user.paste('Excellent book about the American Dream');
-
-      // Save changes
-      const saveButton = screen.getByRole('button', { name: /save changes/i });
-      await user.click(saveButton);
-
-      // Verify saveItem was called with updated data
-      await waitFor(() => {
-        expect(mockStorage.saveItem).toHaveBeenCalled();
-      }, { timeout: 5000 });
-
-      const updatedItem = mockStorage.saveItem.mock.calls[0][0];
-      expect(updatedItem).toMatchObject({
-        title: 'The Great Gatsby',
-        status: 'read',
-        rating: 5,
-        tags: ['classic', 'must-read']
-        // Notes textarea has controlled input issues like in unit tests
-      });
     });
   });
 
   describe('Delete and Undo Flow', () => {
-    it.skip('should delete an item and support undo', async () => {
-      // SKIP: Item detail modal + keyboard shortcut interaction not working in JSDOM - needs E2E testing
-      const existingItems = [
-        {
-          id: 'test-book',
-          filename: 'test-book.md',
-          title: 'Test Book',
-          type: 'book',
-          author: 'Test Author',
-          status: 'read',
-          year: 2023,
-          rating: 0,
-          tags: [],
-          dateAdded: new Date().toISOString(),
-          review: ''
-        }
-      ];
+    it('should delete an item and push to undoStack via useItems hook', async () => {
+      const existingItem = {
+        id: 'test-book',
+        filename: 'test-book.md',
+        title: 'Test Book',
+        type: 'book',
+        author: 'Test Author',
+        status: 'read',
+        year: 2023,
+        rating: 0,
+        tags: [],
+        dateAdded: new Date().toISOString(),
+        review: ''
+      };
 
-      mockStorage.loadItems.mockImplementation((progressCallback) => {
-        if (progressCallback) {
-          progressCallback({ processed: 1, total: 1, items: existingItems });
-        }
-        return Promise.resolve(existingItems);
-      });
+      const undoInfo = { id: existingItem.id, filename: existingItem.filename };
+      mockStorage.deleteItem.mockResolvedValue(undoInfo);
+      mockStorage.restoreItem.mockResolvedValue(existingItem);
 
-      render(<MediaTracker />);
+      const { result } = renderHook(() => useItems());
+      await act(async () => { await result.current.selectStorage('filesystem'); });
 
-      // Setup storage
-      const filesystemButton = await screen.findByRole('button', { name: /local files/i }, { timeout: 3000 });
-      await user.click(filesystemButton);
+      // Manually inject the item into state so we can delete it
+      await act(async () => { await result.current.saveItem(existingItem); });
 
-      // Wait for item to load
-      await waitFor(() => {
-        expect(screen.getByText('Test Book')).toBeInTheDocument();
-      }, { timeout: 5000 });
+      // Confirm saveItem was called, then delete
+      await act(async () => { await result.current.deleteItem(existingItem); });
 
-      // Click on the title to open detail modal
-      const itemTitle = screen.getByText('Test Book');
-      await user.click(itemTitle);
+      expect(mockStorage.deleteItem).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'test-book' })
+      );
+      // undoStack is exported as its length (a number) from useItems
+      expect(result.current.undoStack).toBe(1);
 
-      await waitFor(() => {
-        expect(screen.getByText(/test author/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Press 'd' to delete
-      await user.keyboard('d');
-
-      // Confirm deletion
-      await waitFor(() => {
-        expect(screen.getByText(/are you sure.*delete/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      const confirmButton = screen.getByRole('button', { name: /delete/i });
-      await user.click(confirmButton);
-
-      // Verify deleteItem was called
-      await waitFor(() => {
-        expect(mockStorage.deleteItem).toHaveBeenCalledWith(
-          expect.objectContaining({ id: 'test-book' })
-        );
-      }, { timeout: 5000 });
-
-      // Item should be removed from view
-      await waitFor(() => {
-        expect(screen.queryByText('Test Book')).not.toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Now test undo - look for undo button in the UI
-      // The undo button appears after a delete operation
-      const undoButton = await screen.findByRole('button', { name: /undo/i }, { timeout: 5000 });
-      expect(undoButton).toBeInTheDocument();
-
-      // Click undo
-      await user.click(undoButton);
-
-      // Verify restoreItem was called
-      await waitFor(() => {
-        expect(mockStorage.restoreItem).toHaveBeenCalledWith(
-          expect.objectContaining({ id: 'test-book' })
-        );
-      }, { timeout: 5000 });
+      // Undo the deletion
+      await act(async () => { await result.current.undoLastDelete(); });
+      expect(mockStorage.restoreItem).toHaveBeenCalled();
+      expect(result.current.undoStack).toBe(0);
     });
 
-    it.skip('should handle delete with confirmation cancel', async () => {
-      // SKIP: Item detail modal + keyboard shortcut interaction not working in JSDOM - needs E2E testing
-      const existingItems = [
-        {
-          id: 'test-book-2',
-          filename: 'test-book-2.md',
-          title: 'Test Book 2',
-          type: 'book',
-          author: 'Test Author',
-          status: 'read',
-          year: 2023,
-          rating: 0,
-          tags: [],
-          dateAdded: new Date().toISOString(),
-          review: ''
-        }
-      ];
+    it('should leave undoStack empty when delete operation fails', async () => {
+      const existingItem = {
+        id: 'test-book-2',
+        filename: 'test-book-2.md',
+        title: 'Test Book 2',
+        type: 'book',
+        author: 'Test Author',
+        status: 'read',
+        year: 2023,
+        rating: 0,
+        tags: [],
+        dateAdded: new Date().toISOString(),
+        review: ''
+      };
 
-      mockStorage.loadItems.mockImplementation((progressCallback) => {
-        if (progressCallback) {
-          progressCallback({ processed: 1, total: 1, items: existingItems });
+      mockStorage.deleteItem.mockRejectedValue(new Error('Delete failed'));
+
+      const { result } = renderHook(() => useItems());
+      await act(async () => { await result.current.selectStorage('filesystem'); });
+
+      await act(async () => { await result.current.saveItem(existingItem); });
+
+      // deleteItem re-throws on error — catch it
+      await act(async () => {
+        try {
+          await result.current.deleteItem(existingItem);
+        } catch {
+          // expected — deleteItem re-throws
         }
-        return Promise.resolve(existingItems);
       });
 
-      render(<MediaTracker />);
-
-      // Setup storage
-      const filesystemButton = await screen.findByRole('button', { name: /local files/i }, { timeout: 3000 });
-      await user.click(filesystemButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Test Book 2')).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Click on the title to open detail modal
-      const itemTitle = screen.getByText('Test Book 2');
-      await user.click(itemTitle);
-
-      await waitFor(() => {
-        expect(screen.getByText(/test author/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Press 'd' to delete
-      await user.keyboard('d');
-
-      // Confirm dialog appears
-      await waitFor(() => {
-        expect(screen.getByText(/are you sure.*delete/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Cancel deletion
-      const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
-
-      // Wait for dialog to close and verify item still exists
-      await waitFor(() => {
-        expect(screen.queryByText(/are you sure.*delete/i)).not.toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      expect(screen.getByText('Test Book 2')).toBeInTheDocument();
-      
-      // Delete should not have been called
-      expect(mockStorage.deleteItem).not.toHaveBeenCalled();
+      expect(result.current.undoStack).toBe(0);
     });
   });
 
-  describe('Complete Workflow: Add → Edit → Delete → Undo', () => {
-    it.skip('should support full lifecycle of an item', async () => {
-      // SKIP: Complex multi-modal workflow with keyboard shortcuts - better suited for E2E testing
-      render(<MediaTracker />);
+  describe('Complete Workflow: Add → Edit → Delete via useItems', () => {
+    it('should support full add → edit → delete lifecycle via hook', async () => {
+      const { result } = renderHook(() => useItems());
 
-      // 1. Setup storage and open add modal
-      await setupAndOpenAddModal();
+      await act(async () => { await result.current.initializeStorage(); });
+      await act(async () => { await result.current.selectStorage('filesystem'); });
 
-      // 2. Add a new book
-      const bookButton = screen.getByRole('button', { name: /^book$/i });
-      await user.click(bookButton);
-
-      await fillBookFields({
+      // 1. Add item
+      const newItem = {
+        id: 'full-lifecycle-book',
+        filename: 'full-lifecycle-book.md',
         title: 'Full Lifecycle Book',
+        type: 'book',
         author: 'Test Author',
-        status: 'reading'
-      });
+        status: 'reading',
+        rating: 0,
+        tags: [],
+        dateAdded: new Date().toISOString()
+      };
 
-      let saveButton = screen.getByRole('button', { name: /save item/i });
-      await user.click(saveButton);
+      await act(async () => { await result.current.saveItem(newItem); });
+      expect(mockStorage.saveItem).toHaveBeenCalledTimes(1);
 
-      await waitFor(() => {
-        expect(mockStorage.saveItem).toHaveBeenCalled();
-      }, { timeout: 5000 });
-
-      // Capture the saved item
-      const savedItem = mockStorage.saveItem.mock.calls[0][0];
-
-      // Update mock to return the saved item
-      mockStorage.loadItems.mockImplementation((progressCallback) => {
-        const items = [savedItem];
-        if (progressCallback) {
-          progressCallback({ processed: 1, total: 1, items });
-        }
-        return Promise.resolve(items);
-      });
-
-      // Wait for item to appear
-      await waitFor(() => {
-        expect(screen.getByText('Full Lifecycle Book')).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // 3. Edit the book (item card is a div with onClick)
-      const itemTitle = screen.getByText('Full Lifecycle Book');
-      const itemCard = itemTitle.closest('div[class*="cursor-pointer"]');
-      await user.click(itemCard);
-
-      await waitFor(() => {
-        expect(screen.getByText(/test author/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Switch to edit mode
-      await user.keyboard('e');
-
-      await waitFor(() => {
-        const editTitleInput = screen.getByPlaceholderText(/enter title/i);
-        expect(editTitleInput).toBeInTheDocument();
-        expect(editTitleInput).toHaveValue('Full Lifecycle Book');
-      }, { timeout: 5000 });
-
-      // Update status to "read" and add rating
-      const readButton = screen.getByRole('button', { name: /^read$/i });
-      await user.click(readButton);
-
-      const starButtons = screen.getAllByRole('button').filter(btn => 
-        btn.querySelector('svg') && btn.querySelector('svg').classList.contains('w-8')
+      // 2. Edit item — update mock to return the item so hook can track it
+      mockStorage.loadItems.mockResolvedValue([newItem]);
+      const editedItem = { ...newItem, status: 'read', rating: 4 };
+      await act(async () => { await result.current.saveItem(editedItem); });
+      expect(mockStorage.saveItem).toHaveBeenCalledTimes(2);
+      expect(mockStorage.saveItem).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'read', rating: 4 })
       );
-      await user.click(starButtons[3]); // 4th star
 
-      saveButton = screen.getByRole('button', { name: /save changes/i });
-      await user.click(saveButton);
-
-      await waitFor(() => {
-        expect(mockStorage.saveItem).toHaveBeenCalledTimes(2);
-      }, { timeout: 5000 });
-
-      const updatedItem = mockStorage.saveItem.mock.calls[1][0];
-      expect(updatedItem).toMatchObject({
-        title: 'Full Lifecycle Book',
-        status: 'read',
-        rating: 4
-      });
-
-      // Update mock with edited item
-      mockStorage.loadItems.mockImplementation((progressCallback) => {
-        const items = [updatedItem];
-        if (progressCallback) {
-          progressCallback({ processed: 1, total: 1, items });
-        }
-        return Promise.resolve(items);
-      });
-
-      // 4. Delete the book
-      // Wait for modal to close and item to reappear
-      await waitFor(() => {
-        expect(screen.queryByPlaceholderText(/enter title/i)).not.toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      await waitFor(() => {
-        const cardTitle = screen.getByText('Full Lifecycle Book');
-        expect(cardTitle).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Reopen the detail modal
-      const itemTitle2 = screen.getByText('Full Lifecycle Book');
-      const cardToClick = itemTitle2.closest('div[class*="cursor-pointer"]');
-      await user.click(cardToClick);
-
-      await waitFor(() => {
-        expect(screen.getByText(/test author/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Press 'd' to delete
-      await user.keyboard('d');
-
-      await waitFor(() => {
-        expect(screen.getByText(/are you sure.*delete/i)).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      const deleteButton = screen.getByRole('button', { name: /delete/i });
-      await user.click(deleteButton);
-
-      await waitFor(() => {
-        expect(mockStorage.deleteItem).toHaveBeenCalled();
-      }, { timeout: 5000 });
-
-      // Item should be gone
-      await waitFor(() => {
-        expect(screen.queryByText('Full Lifecycle Book')).not.toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // 5. Undo the deletion
-      const undoButton = await screen.findByRole('button', { name: /undo/i }, { timeout: 5000 });
-      await user.click(undoButton);
-
-      await waitFor(() => {
-        expect(mockStorage.restoreItem).toHaveBeenCalled();
-      }, { timeout: 5000 });
+      // 3. Delete item
+      mockStorage.deleteItem.mockResolvedValue({ id: newItem.id, filename: newItem.filename });
+      await act(async () => { await result.current.deleteItem(editedItem); });
+      expect(mockStorage.deleteItem).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'full-lifecycle-book' })
+      );
     });
   });
 });

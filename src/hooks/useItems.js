@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StorageFactory } from '../services/storageAdapter.js';
 import { toast } from '../services/toastService.js';
+import { autoUpdateDateOnStatusChange } from '../utils/commonUtils.js';
 
 /**
  * Custom hook for managing items (books/movies) with storage adapter pattern
@@ -255,11 +256,17 @@ export const useItems = () => {
    */
   const disconnectStorage = async () => {
     if (storageAdapter) {
-      await storageAdapter.disconnect();
-      setStorageAdapter(null);
-      setStorageInfo(null);
-      setItems([]);
-      setUndoStack([]);
+      try {
+        await storageAdapter.disconnect();
+      } catch (error) {
+        // Handle disconnect errors gracefully
+        console.error('Error disconnecting storage:', error);
+      } finally {
+        setStorageAdapter(null);
+        setStorageInfo(null);
+        setItems([]);
+        setUndoStack([]);
+      }
     }
   };
 
@@ -303,6 +310,11 @@ export const useItems = () => {
       }
       if (changes.dateRead) newItem.dateRead = changes.dateRead;
       if (changes.dateWatched) newItem.dateWatched = changes.dateWatched;
+      if (changes.status) {
+        // Auto-update date when status changes to completed
+        const updatedWithDate = autoUpdateDateOnStatusChange(newItem, changes.status, item.status);
+        Object.assign(newItem, updatedWithDate);
+      }
 
       itemsToEdit.push(newItem);
     }
@@ -367,6 +379,7 @@ export const useItems = () => {
     selectStorage,
     disconnectStorage,
     getAvailableStorageOptions,
-    applyBatchEdit
+    applyBatchEdit,
+    refreshStorageAdapter: (adapter) => setStorageAdapter(adapter)
   };
 };

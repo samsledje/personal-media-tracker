@@ -89,6 +89,24 @@ For bug fixes or small improvements:
 4. Test your changes locally
 5. Submit a pull request with a clear description
 
+### Pull Request Checklist
+
+Before opening or updating a PR, run the merge gate locally:
+
+1. `npm run lint`
+2. `npm run test -- --run`
+3. `npm run test:coverage`
+4. `npm run test:e2e`
+5. `npm run build`
+
+Include in your PR description:
+
+- What changed and why
+- How you tested it (commands run + key results)
+- Any intentionally deferred tests with rationale
+
+Unless coordinated otherwise, target `dev` for regular feature PRs and reserve direct `main` PRs for release/hotfix workflows.
+
 ### Larger Changes
 
 For significant features or architectural changes:

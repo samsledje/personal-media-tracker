@@ -5,6 +5,7 @@ import TagInput from './TagInput.jsx';
 import StarRating from '../StarRating.jsx';
 import { useHalfStars } from '../../hooks/useHalfStars.js';
 import { getStatusColor } from '../../utils/colorUtils.js';
+import { autoUpdateDateOnStatusChange } from '../../utils/commonUtils.js';
 
 /**
  * Form component for editing item details
@@ -119,7 +120,10 @@ const EditForm = ({ item, onChange, fromSearch = false, allTags = [] }) => {
             return (
               <button
                 key={status}
-                onClick={() => onChange({ ...item, status })}
+                onClick={() => {
+                  const updatedItem = autoUpdateDateOnStatusChange(item, status, item.status);
+                  onChange(updatedItem);
+                }}
                 className={`px-4 py-3 sm:py-2 rounded-lg transition min-h-[44px] border-2 ${isSelected
                     ? 'text-white font-medium border-transparent'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600 border-transparent hover:border-slate-500'
