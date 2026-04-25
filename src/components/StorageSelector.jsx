@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FolderOpen, Cloud, Loader2 } from 'lucide-react';
+import GoogleDriveConfigModal from './modals/GoogleDriveConfigModal.jsx';
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-import GoogleDriveConfigModal from './modals/GoogleDriveConfigModal.jsx';
 
 /**
  * Storage Selector Component
