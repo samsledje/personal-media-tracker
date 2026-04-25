@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StorageFactory } from '../services/storageAdapter.js';
 import { toast } from '../services/toastService.js';
+import { autoUpdateDateOnStatusChange } from '../utils/commonUtils.js';
 
 /**
  * Custom hook for managing items (books/movies) with storage adapter pattern
@@ -309,6 +310,11 @@ export const useItems = () => {
       }
       if (changes.dateRead) newItem.dateRead = changes.dateRead;
       if (changes.dateWatched) newItem.dateWatched = changes.dateWatched;
+      if (changes.status) {
+        // Auto-update date when status changes to completed
+        const updatedWithDate = autoUpdateDateOnStatusChange(newItem, changes.status, item.status);
+        Object.assign(newItem, updatedWithDate);
+      }
 
       itemsToEdit.push(newItem);
     }

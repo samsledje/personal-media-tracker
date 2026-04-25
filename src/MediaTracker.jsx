@@ -32,6 +32,7 @@ import { OBSIDIAN_BASE_CONTENT, OBSIDIAN_BASE_FILENAME } from './services/obsidi
 import { processImportFile } from './utils/importUtils.js';
 import { hasApiKey } from './config.js';
 import { toast } from './services/toastService.js';
+import { autoUpdateDateOnStatusChange } from './utils/commonUtils.js';
 
 // Constants
 import { STATUS_LABELS } from './constants/index.js';
@@ -513,7 +514,11 @@ const MediaTracker = () => {
         }
         if (changes.dateRead) newItem.dateRead = changes.dateRead;
         if (changes.dateWatched) newItem.dateWatched = changes.dateWatched;
-        if (changes.status) newItem.status = changes.status;
+        if (changes.status) {
+          // Auto-update date when status changes to completed
+          const updatedWithDate = autoUpdateDateOnStatusChange(newItem, changes.status, item.status);
+          Object.assign(newItem, updatedWithDate);
+        }
 
         try {
           await storageAdapter.saveItem(newItem);

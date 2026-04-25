@@ -664,4 +664,75 @@ describe('EditForm', () => {
       expect(form).toBeInTheDocument();
     });
   });
+
+  it('should auto-update dateRead when status changes from reading to read', () => {
+    const mockOnChange = vi.fn();
+    const item = {
+      title: 'Test Book',
+      type: 'book',
+      status: 'reading',
+      tags: []
+    };
+
+    const { getByText } = render(
+      <EditForm item={item} onChange={mockOnChange} allTags={[]} />
+    );
+
+    const readButton = getByText('Read');
+    fireEvent.click(readButton);
+
+    expect(mockOnChange).toHaveBeenCalled();
+    const updatedItem = mockOnChange.mock.calls[0][0];
+    expect(updatedItem.status).toBe('read');
+    expect(updatedItem.dateRead).toBeDefined();
+    expect(updatedItem.dateRead).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('should auto-update dateWatched when status changes from watching to watched', () => {
+    const mockOnChange = vi.fn();
+    const item = {
+      title: 'Test Movie',
+      type: 'movie',
+      status: 'watching',
+      tags: [],
+      actors: []
+    };
+
+    const { getByText } = render(
+      <EditForm item={item} onChange={mockOnChange} allTags={[]} />
+    );
+
+    const watchedButton = getByText('Watched');
+    fireEvent.click(watchedButton);
+
+    expect(mockOnChange).toHaveBeenCalled();
+    const updatedItem = mockOnChange.mock.calls[0][0];
+    expect(updatedItem.status).toBe('watched');
+    expect(updatedItem.dateWatched).toBeDefined();
+    expect(updatedItem.dateWatched).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('should not overwrite existing dateRead when changing to read status', () => {
+    const mockOnChange = vi.fn();
+    const existingDate = '2024-01-15';
+    const item = {
+      title: 'Test Book',
+      type: 'book',
+      status: 'reading',
+      dateRead: existingDate,
+      tags: []
+    };
+
+    const { getByText } = render(
+      <EditForm item={item} onChange={mockOnChange} allTags={[]} />
+    );
+
+    const readButton = getByText('Read');
+    fireEvent.click(readButton);
+
+    expect(mockOnChange).toHaveBeenCalled();
+    const updatedItem = mockOnChange.mock.calls[0][0];
+    expect(updatedItem.status).toBe('read');
+    expect(updatedItem.dateRead).toBe(existingDate);
+  });
 });
