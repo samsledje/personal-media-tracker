@@ -1780,7 +1780,7 @@ const MediaTracker = () => {
             {!isDeleting ? (
               <>
                 <p className="text-slate-300 mb-6">
-                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? This action cannot be undone.
+                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? They can be recovered from the trash.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
