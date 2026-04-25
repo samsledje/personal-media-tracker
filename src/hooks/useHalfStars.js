@@ -14,7 +14,7 @@ export const useHalfStars = (storage = null) => {
     saveHalfStarsEnabled(enabled);
     // Also save to file if storage is available
     if (storage && storage.isConnected()) {
-      saveAllSettings(storage, { halfStarsEnabled: enabled });
+      saveAllSettings(storage, { halfStarsEnabled: enabled }).catch(err => console.warn('Error saving half stars to file:', err));
     }
   };
 

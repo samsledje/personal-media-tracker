@@ -24,7 +24,7 @@ export const parseMarkdown = (content) => {
   if (!match) return { metadata: {}, body: content };
   
   const metadata = {};
-  const yamlLines = match[1].split('\n');
+  const yamlLines = match[1].split('\n').filter(line => line.trim() !== '');
   
   yamlLines.forEach(line => {
     const colonIndex = line.indexOf(':');

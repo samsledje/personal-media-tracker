@@ -34,7 +34,7 @@ Navigate your entire library without touching the mouse. Comprehensive shortcuts
 
 ## Requirements
 
-- Node.js (14+ recommended) and npm or yarn
+- Node.js 20+ (matches CI) and npm or yarn
 - For **local storage**: A Chromium-based desktop browser (Chrome, Edge) that supports the File System Access API
 - For **Google Drive**: Any modern browser (Chrome, Firefox, Safari, Edge)
 

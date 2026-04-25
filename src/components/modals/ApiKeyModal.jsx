@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Key, Save, ExternalLink } from 'lucide-react';
 import { saveConfig, getConfig, hasApiKey } from '../../config.js';
 
-const ApiKeyModal = ({ onClose }) => {
+const ApiKeyModal = ({ onClose, onSave }) => {
   const [apiKey, setApiKey] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -13,15 +13,14 @@ const ApiKeyModal = ({ onClose }) => {
   }, []);
 
   const handleSave = () => {
-    const success = saveConfig({ omdbApiKey: apiKey.trim() });
-    
-    if (success) {
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        onClose();
-      }, 1500);
-    }
+    const trimmed = apiKey.trim();
+    saveConfig({ omdbApiKey: trimmed });
+    if (onSave) onSave(trimmed);
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+      onClose();
+    }, 1500);
   };
 
   const handleKeyDown = (e) => {

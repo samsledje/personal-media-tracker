@@ -45,7 +45,7 @@ export const useTheme = (storage = null) => {
       saveAllSettings(storage, {
         themePrimary: primaryColor,
         themeHighlight: highlightColor
-      });
+      }).catch(err => console.warn('Error saving theme to file:', err));
     }
   }, [primaryColor, highlightColor, storage]);
 
@@ -54,7 +54,7 @@ export const useTheme = (storage = null) => {
     saveCardSize(cardSize);
     // Also save to file if storage is available
     if (storage && storage.isConnected()) {
-      saveAllSettings(storage, { cardSize });
+      saveAllSettings(storage, { cardSize }).catch(err => console.warn('Error saving card size to file:', err));
     }
   }, [cardSize, storage]);
 

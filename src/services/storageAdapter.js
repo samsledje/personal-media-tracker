@@ -95,6 +95,31 @@ export class StorageAdapter {
   }
 
   /**
+   * List all items in the trash
+   * @returns {Promise<object[]>} Array of trashed items with metadata
+   */
+  async listTrash() {
+    throw new Error('listTrash() must be implemented by subclass');
+  }
+
+  /**
+   * Restore an item from trash by filename
+   * @param {string} filename - Filename of the item to restore
+   * @returns {Promise<string>} Restored item identifier
+   */
+  async restoreFromTrash(filename) {
+    throw new Error('restoreFromTrash() must be implemented by subclass');
+  }
+
+  /**
+   * Permanently delete all items from trash
+   * @returns {Promise<number>} Number of items deleted
+   */
+  async emptyTrash() {
+    throw new Error('emptyTrash() must be implemented by subclass');
+  }
+
+  /**
    * Write an arbitrary file to storage (used for misc files like Obsidian Base)
    * @param {string} filename
    * @param {string} content

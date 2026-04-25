@@ -55,7 +55,9 @@ export const saveConfigToFile = async (storage, config) => {
   }
 
   try {
-    const content = JSON.stringify(config, null, 2);
+    const existingConfig = await loadConfigFromFile(storage);
+    const mergedConfig = { ...existingConfig, ...config };
+    const content = JSON.stringify(mergedConfig, null, 2);
     await storage.writeFile(CONFIG_FILENAME, content);
     return true;
   } catch (error) {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, Palette, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, Key, Cloud, Wifi, WifiOff, ArrowLeft, Bookmark, BookOpen, CheckCircle, PlayCircle, Layers, Trash2, AlertCircle, Settings, XCircle } from 'lucide-react';
+import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, Palette, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, Key, Cloud, Wifi, WifiOff, ArrowLeft, Trash2, AlertCircle, Settings } from 'lucide-react';
 
 // Hooks
 import { useItems } from './hooks/useItems.js';
@@ -20,6 +20,7 @@ import AddEditModal from './components/modals/AddEditModal.jsx';
 import ApiKeyModal from './components/modals/ApiKeyModal.jsx';
 import ObsidianBaseModal from './components/modals/ObsidianBaseModal.jsx';
 import FilterModal from './components/modals/FilterModal.jsx';
+import TrashModal from './components/modals/TrashModal.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import StorageIndicator from './components/StorageIndicator.jsx';
 import ItemCard from './components/cards/ItemCard.jsx';
@@ -34,49 +35,7 @@ import { toast } from './services/toastService.js';
 
 // Constants
 import { PRIMARY_COLOR_PRESETS, HIGHLIGHT_COLOR_PRESETS } from './constants/colors.js';
-import { STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from './constants/index.js';
-
-/**
- * Get the icon component for a given status
- */
-const getStatusIcon = (status, className = '') => {
-  const iconType = STATUS_ICONS[status];
-  switch (iconType) {
-    case 'bookmark':
-      return <Bookmark className={className} />;
-    case 'layers':
-      return <Layers className={className} />;
-    case 'book-open':
-      return <BookOpen className={className} />;
-    case 'check-circle':
-      return <CheckCircle className={className} />;
-    case 'play-circle':
-      return <PlayCircle className={className} />;
-    case 'x-circle':
-      return <XCircle className={className} />;
-    default:
-      return <Bookmark className={className} />;
-  }
-};
-
-/**
- * Get color class for status badge
- */
-const getStatusColorClass = (status) => {
-  const colorType = STATUS_COLORS[status];
-  switch (colorType) {
-    case 'blue':
-      return 'bg-blue-500';
-    case 'yellow':
-      return 'bg-yellow-500';
-    case 'green':
-      return 'bg-green-500';
-    case 'red':
-      return 'bg-red-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
+import { STATUS_LABELS } from './constants/index.js';
 
 /**
  * Export utility functions for filtering items by type
@@ -104,6 +63,7 @@ const MediaTracker = () => {
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportSubmenuOpen, setExportSubmenuOpen] = useState(false);
@@ -167,7 +127,8 @@ const MediaTracker = () => {
     selectStorage,
     disconnectStorage,
     getAvailableStorageOptions,
-    applyBatchEdit
+    applyBatchEdit,
+    refreshStorageAdapter
   } = useItems();
 
   const {
@@ -811,7 +772,7 @@ const MediaTracker = () => {
     onConfirmBatchDelete: confirmBatchDelete,
     selectionMode,
     selectedCount,
-    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || showApiKeyManager || customizeOpen || searchResultItem || storageIndicatorOpen),
+    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || showApiKeyManager || showTrash || customizeOpen || searchResultItem || storageIndicatorOpen),
     showHelp,
     customizeOpen,
     showBatchDeleteConfirm
@@ -834,6 +795,7 @@ const MediaTracker = () => {
             // Try to reconnect (retrieve stored handle and verify permissions)
             console.log('Attempting to restore File System connection...');
             await adapter.tryReconnect();
+            refreshStorageAdapter(adapter);
 
             // If successful, load items
             await loadItems(adapter);
@@ -858,6 +820,7 @@ const MediaTracker = () => {
               // Try to reconnect silently (without showing popup)
               console.log('Attempting silent reconnection to Google Drive...');
               await adapter.tryReconnect();
+              refreshStorageAdapter(adapter);
 
               // If successful, load items
               await loadItems(adapter);
@@ -1288,6 +1251,14 @@ const MediaTracker = () => {
             </div>
 
             {/* Undo Delete option intentionally removed from the menu */}
+
+            <button
+              onClick={() => { setShowTrash(true); setMenuOpen(false); }}
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-white"
+            >
+              <Trash2 className="w-4 h-4" />
+              View Trash
+            </button>
 
             <button
               onClick={() => { handleDisconnectStorage(); setMenuOpen(false); }}
@@ -1776,7 +1747,16 @@ const MediaTracker = () => {
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
-      {showApiKeyManager && <ApiKeyModal onClose={() => setShowApiKeyManager(false)} />}
+      {showApiKeyManager && <ApiKeyModal onClose={() => setShowApiKeyManager(false)} onSave={updateApiKey} />}
+      
+      {showTrash && (
+        <TrashModal
+          storageAdapter={storageAdapter}
+          onClose={() => setShowTrash(false)}
+          onRestore={() => loadItems()}
+        />
+      )}
+      
       {showObsidianBaseModal && (
         <ObsidianBaseModal
           onClose={() => setShowObsidianBaseModal(false)}
@@ -1803,7 +1783,7 @@ const MediaTracker = () => {
             {!isDeleting ? (
               <>
                 <p className="text-slate-300 mb-6">
-                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? This action cannot be undone.
+                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? They can be recovered from the trash.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button

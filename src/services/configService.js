@@ -2,6 +2,9 @@
 
 import { LOCAL_STORAGE_KEYS, DEFAULT_THEME } from '../constants/index.js';
 import { loadConfigFromFile, saveConfigToFile, mergeConfigs } from './configFileService.js';
+import { saveConfig } from '../config.js';
+
+const MEDIA_TRACKER_CONFIG_KEY = 'mediaTracker_config';
 
 /**
  * Load OMDb API key from localStorage
@@ -9,7 +12,8 @@ import { loadConfigFromFile, saveConfigToFile, mergeConfigs } from './configFile
  */
 export const loadOmdbApiKey = () => {
   try {
-    return localStorage.getItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY) || '';
+    const stored = localStorage.getItem(MEDIA_TRACKER_CONFIG_KEY);
+    return (stored ? JSON.parse(stored) : {}).omdbApiKey || '';
   } catch (error) {
     console.warn('Error loading OMDb API key:', error);
     return '';
@@ -21,11 +25,7 @@ export const loadOmdbApiKey = () => {
  * @param {string} apiKey - API key to save
  */
 export const saveOmdbApiKey = (apiKey) => {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY, apiKey);
-  } catch (error) {
-    console.warn('Error saving OMDb API key:', error);
-  }
+  saveConfig({ omdbApiKey: apiKey });
 };
 
 /**

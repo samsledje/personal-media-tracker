@@ -21,16 +21,16 @@ describe('configService', () => {
 
   describe('loadOmdbApiKey', () => {
     it('should load API key from localStorage', () => {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY, 'test-api-key');
-      
+      localStorage.setItem('mediaTracker_config', JSON.stringify({ omdbApiKey: 'test-api-key' }));
+
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('test-api-key');
     });
 
     it('should return empty string if no API key stored', () => {
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('');
     });
 
@@ -38,9 +38,9 @@ describe('configService', () => {
       const spy = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
         throw new Error('Storage error');
       });
-      
+
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('');
       spy.mockRestore();
     });
@@ -49,8 +49,9 @@ describe('configService', () => {
   describe('saveOmdbApiKey', () => {
     it('should save API key to localStorage', () => {
       saveOmdbApiKey('new-api-key');
-      
-      expect(localStorage.getItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY)).toBe('new-api-key');
+
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config'));
+      expect(stored.omdbApiKey).toBe('new-api-key');
     });
 
     it('should handle errors gracefully', () => {
