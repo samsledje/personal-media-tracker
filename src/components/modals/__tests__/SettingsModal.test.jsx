@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import SettingsModal from '../SettingsModal.jsx';
 
 const defaultProps = {
@@ -22,7 +22,14 @@ const defaultProps = {
 };
 
 describe('SettingsModal', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('renders with Appearance tab active by default', () => {
     render(<SettingsModal {...defaultProps} />);
@@ -106,5 +113,65 @@ describe('SettingsModal', () => {
   it('does not show welcome message when API key is set', () => {
     render(<SettingsModal {...defaultProps} initialTab="API Keys" omdbApiKey="existing-key" />);
     expect(screen.queryByText('Movie search requires an API key')).not.toBeInTheDocument();
+  });
+
+  it('hides saved message after 2 seconds', () => {
+    render(<SettingsModal {...defaultProps} initialTab="API Keys" />);
+    const input = screen.getByPlaceholderText('Enter your OMDb API key');
+    fireEvent.change(input, { target: { value: 'my-key' } });
+    fireEvent.click(screen.getByText('Save Key'));
+    expect(screen.getByText('✓ API key saved')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(2000));
+    expect(screen.queryByText('✓ API key saved')).not.toBeInTheDocument();
+  });
+
+  it('saves API key on Enter key in input', () => {
+    const updateApiKey = vi.fn();
+    render(<SettingsModal {...defaultProps} initialTab="API Keys" updateApiKey={updateApiKey} />);
+    const input = screen.getByPlaceholderText('Enter your OMDb API key');
+    fireEvent.change(input, { target: { value: 'enter-key' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(updateApiKey).toHaveBeenCalledWith('enter-key');
+  });
+
+  it('calls updatePrimaryColor when a color preset is clicked', () => {
+    const updatePrimaryColor = vi.fn();
+    render(<SettingsModal {...defaultProps} updatePrimaryColor={updatePrimaryColor} />);
+    const presetButtons = screen.getAllByTitle(/Primary preset/);
+    fireEvent.click(presetButtons[0]);
+    expect(updatePrimaryColor).toHaveBeenCalled();
+  });
+
+  it('calls updateHighlightColor when a highlight preset is clicked', () => {
+    const updateHighlightColor = vi.fn();
+    render(<SettingsModal {...defaultProps} updateHighlightColor={updateHighlightColor} />);
+    const presetButtons = screen.getAllByTitle(/Highlight preset/);
+    fireEvent.click(presetButtons[0]);
+    expect(updateHighlightColor).toHaveBeenCalled();
+  });
+
+  it('calls onClearCache and onClose when Clear Cache is clicked', () => {
+    const onClearCache = vi.fn();
+    const onClose = vi.fn();
+    const gdriveAdapter = { getStorageType: () => 'googledrive' };
+    render(<SettingsModal {...defaultProps} initialTab="General" storageAdapter={gdriveAdapter} onClearCache={onClearCache} onClose={onClose} />);
+    fireEvent.click(screen.getByText('Clear Cache'));
+    expect(onClearCache).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('updates active tab when initialTab prop changes', () => {
+    const { rerender } = render(<SettingsModal {...defaultProps} initialTab="Appearance" />);
+    expect(screen.getByText('Card Size: Medium')).toBeInTheDocument();
+    rerender(<SettingsModal {...defaultProps} initialTab="General" />);
+    expect(screen.getByText('Half Star Ratings')).toBeInTheDocument();
+  });
+
+  it('removes keyboard listener on unmount', () => {
+    const removeSpy = vi.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<SettingsModal {...defaultProps} />);
+    unmount();
+    expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
+    removeSpy.mockRestore();
   });
 });
