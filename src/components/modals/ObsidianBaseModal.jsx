@@ -17,6 +17,9 @@ const ObsidianBaseModal = ({ onClose, onCreate }) => {
     try {
       setCreating(true);
       await onCreate(dontAsk);
+    } catch (error) {
+      // Handle errors gracefully - don't throw to prevent unhandled rejections
+      console.error('Error creating Obsidian Base:', error);
     } finally {
       setCreating(false);
     }

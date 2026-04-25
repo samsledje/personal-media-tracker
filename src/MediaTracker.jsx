@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, Palette, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, Key, Cloud, Wifi, WifiOff, ArrowLeft, Bookmark, BookOpen, CheckCircle, PlayCircle, Layers, Trash2, AlertCircle, Settings, XCircle } from 'lucide-react';
+import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, Palette, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, Key, Cloud, Wifi, WifiOff, ArrowLeft, Trash2, AlertCircle, Settings } from 'lucide-react';
 
 // Hooks
 import { useItems } from './hooks/useItems.js';
@@ -34,49 +34,7 @@ import { toast } from './services/toastService.js';
 
 // Constants
 import { PRIMARY_COLOR_PRESETS, HIGHLIGHT_COLOR_PRESETS } from './constants/colors.js';
-import { STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from './constants/index.js';
-
-/**
- * Get the icon component for a given status
- */
-const getStatusIcon = (status, className = '') => {
-  const iconType = STATUS_ICONS[status];
-  switch (iconType) {
-    case 'bookmark':
-      return <Bookmark className={className} />;
-    case 'layers':
-      return <Layers className={className} />;
-    case 'book-open':
-      return <BookOpen className={className} />;
-    case 'check-circle':
-      return <CheckCircle className={className} />;
-    case 'play-circle':
-      return <PlayCircle className={className} />;
-    case 'x-circle':
-      return <XCircle className={className} />;
-    default:
-      return <Bookmark className={className} />;
-  }
-};
-
-/**
- * Get color class for status badge
- */
-const getStatusColorClass = (status) => {
-  const colorType = STATUS_COLORS[status];
-  switch (colorType) {
-    case 'blue':
-      return 'bg-blue-500';
-    case 'yellow':
-      return 'bg-yellow-500';
-    case 'green':
-      return 'bg-green-500';
-    case 'red':
-      return 'bg-red-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
+import { STATUS_LABELS } from './constants/index.js';
 
 /**
  * Export utility functions for filtering items by type

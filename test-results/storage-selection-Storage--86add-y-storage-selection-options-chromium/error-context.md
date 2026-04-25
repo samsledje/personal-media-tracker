@@ -1,0 +1,115 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - generic [ref=e7]:
+      - img "Markdown Media Tracker logo" [ref=e8]
+      - heading "Markdown Media Tracker" [level=1] [ref=e9]
+      - paragraph [ref=e10]: Track books and movies with the simplicity of Markdown files
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - img "Keep track of books and movies in one central library" [ref=e14]
+          - button "Previous screenshot" [ref=e15] [cursor=pointer]:
+            - img [ref=e16]
+          - button "Next screenshot" [ref=e18] [cursor=pointer]:
+            - img [ref=e19]
+        - paragraph [ref=e22]: Keep track of books and movies in one central library
+        - generic [ref=e23]:
+          - button "Go to screenshot 1" [ref=e24] [cursor=pointer]
+          - button "Go to screenshot 2" [ref=e25] [cursor=pointer]
+          - button "Go to screenshot 3" [ref=e26] [cursor=pointer]
+          - button "Go to screenshot 4" [ref=e27] [cursor=pointer]
+          - button "Go to screenshot 5" [ref=e28] [cursor=pointer]
+          - button "Go to screenshot 6" [ref=e29] [cursor=pointer]
+          - button "Go to screenshot 7" [ref=e30] [cursor=pointer]
+          - button "Go to screenshot 8" [ref=e31] [cursor=pointer]
+      - generic [ref=e32]:
+        - button "Get started with Markdown Media Tracker" [ref=e33] [cursor=pointer]: Get Started
+        - button "View features and learn more" [ref=e34] [cursor=pointer]: View Features
+      - img [ref=e36]
+    - region "Why Markdown Media Tracker?" [ref=e38]:
+      - generic [ref=e39]:
+        - heading "Why Markdown Media Tracker?" [level=2] [ref=e40]
+        - generic [ref=e41]:
+          - generic [ref=e43]:
+            - img [ref=e45]
+            - generic [ref=e48]:
+              - heading "Privacy-First Storage" [level=3] [ref=e49]
+              - paragraph [ref=e50]: Your data stays yours. Choose local storage or Google Drive—no third-party servers, no tracking, no subscriptions.
+          - generic [ref=e52]:
+            - img [ref=e54]
+            - generic [ref=e57]:
+              - heading "Markdown-Powered" [level=3] [ref=e58]
+              - paragraph [ref=e59]: Each item is a simple .md file with YAML frontmatter. Works seamlessly with Obsidian, Git, and your favorite text editor.
+          - generic [ref=e61]:
+            - img [ref=e63]
+            - generic [ref=e67]:
+              - heading "Rich Features" [level=3] [ref=e68]
+              - paragraph [ref=e69]: Search Open Library and OMDb, import from Goodreads/Letterboxd, filter by rating and tags, and customize your view.
+          - generic [ref=e71]:
+            - img [ref=e73]
+            - generic [ref=e75]:
+              - heading "Keyboard-First" [level=3] [ref=e76]
+              - paragraph [ref=e77]: Navigate your entire library without touching the mouse. Comprehensive shortcuts for power users who want speed.
+    - region "Choose Your Storage" [ref=e78]:
+      - generic [ref=e79]:
+        - heading "Choose Your Storage" [level=2] [ref=e80]
+        - paragraph [ref=e81]: Select where to store your media library. You can change this anytime in settings.
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - button "Local Files Store files locally on your device ✓ Files stored locally on your device ✓ Works offline ✓ Full control over your data ⚠ Desktop browsers only (Chrome, Edge, Opera)" [ref=e86] [cursor=pointer]:
+            - generic [ref=e87]:
+              - img [ref=e88]
+              - heading "Local Files" [level=3] [ref=e91]
+            - paragraph [ref=e92]: Store files locally on your device
+            - generic [ref=e94]:
+              - paragraph [ref=e95]: ✓ Files stored locally on your device
+              - paragraph [ref=e96]: ✓ Works offline
+              - paragraph [ref=e97]: ✓ Full control over your data
+              - paragraph [ref=e98]: ⚠ Desktop browsers only (Chrome, Edge, Opera)
+          - button "Google Drive Store files in your Google Drive ✓ Access from any device ✓ Automatic cloud backup ✓ Works on mobile devices ℹ Requires Google account ⚠ Allow popups when prompted (check mobile browser settings)" [ref=e100] [cursor=pointer]:
+            - generic [ref=e101]:
+              - img [ref=e102]
+              - heading "Google Drive" [level=3] [ref=e105]
+            - paragraph [ref=e106]: Store files in your Google Drive
+            - generic [ref=e108]:
+              - paragraph [ref=e109]: ✓ Access from any device
+              - paragraph [ref=e110]: ✓ Automatic cloud backup
+              - paragraph [ref=e111]: ✓ Works on mobile devices
+              - paragraph [ref=e112]: ℹ Requires Google account
+              - paragraph [ref=e113]: ⚠ Allow popups when prompted (check mobile browser settings)
+        - generic [ref=e114]:
+          - heading "Need help choosing?" [level=4] [ref=e115]
+          - generic [ref=e116]:
+            - generic [ref=e117]:
+              - paragraph [ref=e118]: "Choose Local Files if:"
+              - list [ref=e119]:
+                - listitem [ref=e120]: • You primarily use desktop/laptop
+                - listitem [ref=e121]: • You prefer local data control
+                - listitem [ref=e122]: • You don't need mobile access
+            - generic [ref=e123]:
+              - paragraph [ref=e124]: "Choose Google Drive if:"
+              - list [ref=e125]:
+                - listitem [ref=e126]: • You want mobile/tablet access
+                - listitem [ref=e127]: • You use multiple devices
+                - listitem [ref=e128]: • You want automatic backup
+  - generic [ref=e129]:
+    - button "Customize Appearance" [ref=e130] [cursor=pointer]:
+      - img [ref=e131]
+    - button "Help & Shortcuts" [ref=e137] [cursor=pointer]:
+      - img [ref=e138]
+  - contentinfo [ref=e140]:
+    - generic [ref=e142]:
+      - link "View on GitHub" [ref=e143] [cursor=pointer]:
+        - /url: https://github.com/samsledje/markdown-media-tracker
+        - img [ref=e144]
+      - generic [ref=e146]: "|"
+      - link "Privacy Policy" [ref=e147] [cursor=pointer]:
+        - /url: ./privacy-policy.html
+        - img [ref=e148]
+      - generic [ref=e150]: "|"
+      - link "Visit samsl.io" [ref=e151] [cursor=pointer]:
+        - /url: https://samsl.io
+        - img [ref=e152]
+```
