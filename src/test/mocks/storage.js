@@ -8,6 +8,7 @@ export class MockFileSystemStorage {
     this.connected = false;
     this.items = [];
     this.directoryHandle = null;
+    this.files = {}; // Store arbitrary files
   }
 
   async initialize() {
@@ -37,6 +38,7 @@ export class MockFileSystemStorage {
     this.connected = false;
     this.directoryHandle = null;
     this.items = [];
+    this.files = {};
   }
 
   async loadItems(progressCallback) {
@@ -94,11 +96,18 @@ export class MockFileSystemStorage {
     return undoInfo.item;
   }
 
+  async readFile(filename) {
+    if (!this.connected) {
+      throw new Error('Storage not connected');
+    }
+    return this.files[filename] || null;
+  }
+
   async writeFile(filename, content) {
     if (!this.connected) {
       throw new Error('Storage not connected');
     }
-    // Mock file writing
+    this.files[filename] = content;
     return true;
   }
 
@@ -106,14 +115,7 @@ export class MockFileSystemStorage {
     if (!this.connected) {
       throw new Error('Storage not connected');
     }
-    return false;
-  }
-
-  async readFile(filename) {
-    if (!this.connected) {
-      throw new Error('Storage not connected');
-    }
-    return '';
+    return filename in this.files;
   }
 
   // Test helper methods
@@ -123,6 +125,18 @@ export class MockFileSystemStorage {
 
   _getItems() {
     return [...this.items];
+  }
+
+  _setFile(filename, content) {
+    this.files[filename] = content;
+  }
+
+  _getFile(filename) {
+    return this.files[filename];
+  }
+
+  _clearFiles() {
+    this.files = {};
   }
 }
 

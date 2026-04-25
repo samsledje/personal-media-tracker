@@ -354,4 +354,91 @@ Notes.`;
       expect(parsed.body).toBe(original.review);
     });
   });
+
+  describe('edge cases', () => {
+    it('should handle filesystem-unfriendly characters in title', () => {
+      const item = {
+        title: 'Book: "A Story" / Path\\To\\File',
+        type: 'book',
+        dateAdded: '2024-01-01'
+      };
+
+      const markdown = generateMarkdown(item);
+      const parsed = parseMarkdown(markdown);
+      
+      // Quotes are stripped during parsing, but other special chars preserved
+      expect(parsed.metadata.title).toBe('Book: A Story / Path\\To\\File');
+    });
+
+    it('should handle very long titles', () => {
+      const longTitle = 'A'.repeat(500);
+      const item = {
+        title: longTitle,
+        type: 'book',
+        dateAdded: '2024-01-01'
+      };
+
+      const markdown = generateMarkdown(item);
+      const parsed = parseMarkdown(markdown);
+      
+      expect(parsed.metadata.title).toBe(longTitle);
+    });
+
+    it('should handle special Unicode characters', () => {
+      const item = {
+        title: 'Book with émojis 🎬 and spéciál chárs',
+        type: 'book',
+        dateAdded: '2024-01-01'
+      };
+
+      const markdown = generateMarkdown(item);
+      const parsed = parseMarkdown(markdown);
+      
+      expect(parsed.metadata.title).toBe('Book with émojis 🎬 and spéciál chárs');
+    });
+
+    it('should handle malformed YAML frontmatter gracefully', () => {
+      const malformed = `---
+title: "Unclosed quote
+author: Test Author
+---
+Content`;
+
+      const result = parseMarkdown(malformed);
+      
+      // Should not throw, should handle gracefully
+      expect(result).toBeDefined();
+      expect(result.metadata).toBeDefined();
+    });
+
+    it('should handle empty YAML frontmatter', () => {
+      // Empty frontmatter with newline between delimiters
+      const empty = `---
+
+---
+Content`;
+
+      const result = parseMarkdown(empty);
+      
+      expect(result.metadata).toEqual({});
+      expect(result.body).toBe('Content');
+    });
+
+    it('should handle null and undefined values', () => {
+      const item = {
+        title: 'Test',
+        type: 'book',
+        author: null,
+        year: undefined,
+        rating: null,
+        dateAdded: '2024-01-01'
+      };
+
+      const markdown = generateMarkdown(item);
+      
+      // Should not include null/undefined fields
+      expect(markdown).not.toContain('author: null');
+      expect(markdown).not.toContain('year: undefined');
+    });
+  });
 });

@@ -155,52 +155,55 @@ const BatchEditModal = ({ onClose, onApply, selectedItems = [], isProcessing = f
                 </select>
               </label>
               
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyAuthor} 
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply author"
+                  checked={applyAuthor}
                   onChange={(e) => setApplyAuthor(e.target.checked)}
                   className="min-w-[16px] min-h-[16px]"
                 />
                 <span className="flex-shrink-0">Author</span>
-                <input 
-                  value={author} 
-                  onChange={(e) => setAuthor(e.target.value)} 
-                  className="flex-1 px-3 py-2 sm:px-2 sm:py-1 bg-slate-700 border border-slate-600 rounded text-base min-h-[44px] sm:min-h-auto" 
-                  placeholder="Author" 
+                <input
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  className="flex-1 px-3 py-2 sm:px-2 sm:py-1 bg-slate-700 border border-slate-600 rounded text-base min-h-[44px] sm:min-h-auto"
+                  placeholder="Author"
                 />
-              </label>
-              
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyDirector} 
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply director"
+                  checked={applyDirector}
                   onChange={(e) => setApplyDirector(e.target.checked)}
                   className="min-w-[16px] min-h-[16px]"
                 />
                 <span className="flex-shrink-0">Director</span>
-                <input 
-                  value={director} 
-                  onChange={(e) => setDirector(e.target.value)} 
-                  className="flex-1 px-3 py-2 sm:px-2 sm:py-1 bg-slate-700 border border-slate-600 rounded text-base min-h-[44px] sm:min-h-auto" 
-                  placeholder="Director" 
+                <input
+                  value={director}
+                  onChange={(e) => setDirector(e.target.value)}
+                  className="flex-1 px-3 py-2 sm:px-2 sm:py-1 bg-slate-700 border border-slate-600 rounded text-base min-h-[44px] sm:min-h-auto"
+                  placeholder="Director"
                 />
-              </label>
-              
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyYear} 
-                  onChange={(e) => setApplyYear(e.target.checked)} 
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply year"
+                  checked={applyYear}
+                  onChange={(e) => setApplyYear(e.target.checked)}
                 />
-                Year
-                <input 
-                  value={year} 
-                  onChange={(e) => setYear(e.target.value)} 
-                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded" 
-                  placeholder="Year" 
+                <span>Year</span>
+                <input
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded"
+                  placeholder="Year"
                 />
-              </label>
+              </div>
               
               <label className="flex items-center gap-2">
                 <input 
@@ -250,65 +253,69 @@ const BatchEditModal = ({ onClose, onApply, selectedItems = [], isProcessing = f
                 </select>
               </label>
               
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyAddTags} 
-                  onChange={(e) => setApplyAddTags(e.target.checked)} 
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply add tags"
+                  checked={applyAddTags}
+                  onChange={(e) => setApplyAddTags(e.target.checked)}
                 />
-                Add tags
-                <input 
-                  value={addTagsStr} 
-                  onChange={(e) => setAddTagsStr(e.target.value)} 
-                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded" 
-                  placeholder="tag1, tag2" 
+                <span>Add tags</span>
+                <input
+                  value={addTagsStr}
+                  onChange={(e) => setAddTagsStr(e.target.value)}
+                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded"
+                  placeholder="tag1, tag2"
                 />
-              </label>
-              
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyRemoveTags} 
-                  onChange={(e) => setApplyRemoveTags(e.target.checked)} 
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply remove tags"
+                  checked={applyRemoveTags}
+                  onChange={(e) => setApplyRemoveTags(e.target.checked)}
                 />
-                Remove tags
-                <input 
-                  value={removeTagsStr} 
-                  onChange={(e) => setRemoveTagsStr(e.target.value)} 
-                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded" 
-                  placeholder="tag1, tag2" 
+                <span>Remove tags</span>
+                <input
+                  value={removeTagsStr}
+                  onChange={(e) => setRemoveTagsStr(e.target.value)}
+                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded"
+                  placeholder="tag1, tag2"
                 />
-              </label>
-              
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyDateRead} 
-                  onChange={(e) => setApplyDateRead(e.target.checked)} 
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply date read"
+                  checked={applyDateRead}
+                  onChange={(e) => setApplyDateRead(e.target.checked)}
                 />
-                Date read
-                <input 
-                  type="date" 
-                  value={dateRead} 
-                  onChange={(e) => setDateRead(e.target.value)} 
-                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded" 
+                <span>Date read</span>
+                <input
+                  type="date"
+                  value={dateRead}
+                  onChange={(e) => setDateRead(e.target.value)}
+                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded"
                 />
-              </label>
-              
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={applyDateWatched} 
-                  onChange={(e) => setApplyDateWatched(e.target.checked)} 
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  aria-label="Apply date watched"
+                  checked={applyDateWatched}
+                  onChange={(e) => setApplyDateWatched(e.target.checked)}
                 />
-                Date watched
-                <input 
-                  type="date" 
-                  value={dateWatched} 
-                  onChange={(e) => setDateWatched(e.target.value)} 
-                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded" 
+                <span>Date watched</span>
+                <input
+                  type="date"
+                  value={dateWatched}
+                  onChange={(e) => setDateWatched(e.target.value)}
+                  className="ml-auto px-2 py-1 bg-slate-700 border border-slate-600 rounded"
                 />
-              </label>
+              </div>
             </div>
           </div>
 

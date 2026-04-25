@@ -29,7 +29,7 @@ const HelpModal = ({ onClose }) => {
               <li><strong>N</strong> — Add manually (when storage connected)</li>
               <li><strong>S</strong> — Search online (when storage connected)</li>
               <li><strong>F</strong> — Toggle filters</li>
-              <li><strong>C</strong> — Show/hide customize style panel</li>
+              <li><strong>C</strong> — Open Settings</li>
             </ul>
           </div>
           <div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, Palette, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, Key, Cloud, Wifi, WifiOff, ArrowLeft, Bookmark, BookOpen, CheckCircle, PlayCircle, Layers, Trash2, AlertCircle, Settings, XCircle } from 'lucide-react';
+import { Book, Film, Search, Plus, Star, Tag, Calendar, User, Hash, X, FolderOpen, Save, ChevronDown, ChevronUp, ChevronRight, CheckSquare, SlidersHorizontal, ArrowUpDown, Download, Upload, ArrowLeft, Trash2, AlertCircle, Settings } from 'lucide-react';
 
 // Hooks
 import { useItems } from './hooks/useItems.js';
@@ -17,9 +17,10 @@ import HelpModal from './components/modals/HelpModal.jsx';
 import BatchEditModal from './components/modals/BatchEditModal.jsx';
 import ItemDetailModal from './components/modals/ItemDetailModal.jsx';
 import AddEditModal from './components/modals/AddEditModal.jsx';
-import ApiKeyModal from './components/modals/ApiKeyModal.jsx';
+import SettingsModal from './components/modals/SettingsModal.jsx';
 import ObsidianBaseModal from './components/modals/ObsidianBaseModal.jsx';
 import FilterModal from './components/modals/FilterModal.jsx';
+import TrashModal from './components/modals/TrashModal.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import StorageIndicator from './components/StorageIndicator.jsx';
 import ItemCard from './components/cards/ItemCard.jsx';
@@ -34,50 +35,7 @@ import { toast } from './services/toastService.js';
 import { autoUpdateDateOnStatusChange } from './utils/commonUtils.js';
 
 // Constants
-import { PRIMARY_COLOR_PRESETS, HIGHLIGHT_COLOR_PRESETS } from './constants/colors.js';
-import { STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from './constants/index.js';
-
-/**
- * Get the icon component for a given status
- */
-const getStatusIcon = (status, className = '') => {
-  const iconType = STATUS_ICONS[status];
-  switch (iconType) {
-    case 'bookmark':
-      return <Bookmark className={className} />;
-    case 'layers':
-      return <Layers className={className} />;
-    case 'book-open':
-      return <BookOpen className={className} />;
-    case 'check-circle':
-      return <CheckCircle className={className} />;
-    case 'play-circle':
-      return <PlayCircle className={className} />;
-    case 'x-circle':
-      return <XCircle className={className} />;
-    default:
-      return <Bookmark className={className} />;
-  }
-};
-
-/**
- * Get color class for status badge
- */
-const getStatusColorClass = (status) => {
-  const colorType = STATUS_COLORS[status];
-  switch (colorType) {
-    case 'blue':
-      return 'bg-blue-500';
-    case 'yellow':
-      return 'bg-yellow-500';
-    case 'green':
-      return 'bg-green-500';
-    case 'red':
-      return 'bg-red-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
+import { STATUS_LABELS } from './constants/index.js';
 
 /**
  * Export utility functions for filtering items by type
@@ -104,11 +62,11 @@ const MediaTracker = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
-  const [showApiKeyManager, setShowApiKeyManager] = useState(false);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('Appearance');
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportSubmenuOpen, setExportSubmenuOpen] = useState(false);
-  const [settingsSubmenuOpen, setSettingsSubmenuOpen] = useState(false);
   // Import progress state
   const [isImporting, setIsImporting] = useState(false);
   const [importProcessed, setImportProcessed] = useState(0);
@@ -138,8 +96,7 @@ const MediaTracker = () => {
   const landingPageRef = useRef(null);
   const exportSubmenuTimeoutRef = useRef(null);
   const exportContainerRef = useRef(null);
-  const settingsSubmenuTimeoutRef = useRef(null);
-  const settingsContainerRef = useRef(null);
+
   const importAbortControllerRef = useRef(null);
   const headerRef = useRef(null);
   const touchMovedRef = useRef(false);
@@ -149,7 +106,6 @@ const MediaTracker = () => {
   const [menuPos, setMenuPos] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [exportSubmenuPosition, setExportSubmenuPosition] = useState('right');
-  const [settingsSubmenuPosition, setSettingsSubmenuPosition] = useState('right');
 
   // Custom hooks
   const {
@@ -168,7 +124,8 @@ const MediaTracker = () => {
     selectStorage,
     disconnectStorage,
     getAvailableStorageOptions,
-    applyBatchEdit
+    applyBatchEdit,
+    refreshStorageAdapter
   } = useItems();
 
   const {
@@ -229,24 +186,24 @@ const MediaTracker = () => {
     cardSize,
     updatePrimaryColor,
     updateHighlightColor,
-    updateCardSize
-  } = useTheme();
+    updateCardSize,
+    resetTheme
+  } = useTheme(storageAdapter);
 
-  const { omdbApiKey, updateApiKey } = useOmdbApi();
+  const { omdbApiKey, updateApiKey } = useOmdbApi(storageAdapter);
 
-  const [halfStarsEnabled, setHalfStarsEnabled] = useHalfStars();
+  const [halfStarsEnabled, setHalfStarsEnabled] = useHalfStars(storageAdapter);
 
   // Close modals and clear states
   const closeModals = () => {
     setMenuOpen(false);
-    setCustomizeOpen(false);
+    setSettingsOpen(false);
     setExportSubmenuOpen(false);
     setShowHelp(false);
     setIsAdding(false);
     setIsSearching(false);
     setSelectedItem(null);
     setShowBatchEdit(false);
-    setShowApiKeyManager(false);
     if (storageIndicatorRef.current) {
       storageIndicatorRef.current.closeModal();
     }
@@ -269,20 +226,6 @@ const MediaTracker = () => {
     }, 100);
   };
 
-  // Settings submenu hover handlers
-  const handleSettingsSubmenuEnter = () => {
-    if (settingsSubmenuTimeoutRef.current) {
-      clearTimeout(settingsSubmenuTimeoutRef.current);
-    }
-    calculateSettingsSubmenuPosition();
-    setSettingsSubmenuOpen(true);
-  };
-
-  const handleSettingsSubmenuLeave = () => {
-    settingsSubmenuTimeoutRef.current = setTimeout(() => {
-      setSettingsSubmenuOpen(false);
-    }, 100);
-  };
 
   // Calculate optimal position for export submenu
   const calculateExportSubmenuPosition = () => {
@@ -306,27 +249,6 @@ const MediaTracker = () => {
     }
   };
 
-  // Calculate optimal position for settings submenu
-  const calculateSettingsSubmenuPosition = () => {
-    if (!settingsContainerRef.current) return;
-
-    const containerRect = settingsContainerRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const submenuWidth = 160; // min-w-[160px]
-    const spacing = 8; // ml-2/mr-2
-    const buffer = 16; // Extra buffer from screen edge
-
-    // Check if submenu would overflow on the right
-    const rightEdge = containerRect.right + spacing + submenuWidth + buffer;
-
-    if (rightEdge > viewportWidth) {
-      // Position to the left
-      setSettingsSubmenuPosition('left');
-    } else {
-      // Position to the right (default)
-      setSettingsSubmenuPosition('right');
-    }
-  };
 
   // Focus search input
   const focusSearch = () => {
@@ -342,7 +264,7 @@ const MediaTracker = () => {
     if (storageIndicatorRef.current) {
       // Close other modals first
       setShowHelp(false);
-      setCustomizeOpen(false);
+      setSettingsOpen(false);
       // Then toggle storage modal
       storageIndicatorRef.current.toggleModal();
     }
@@ -363,7 +285,6 @@ const MediaTracker = () => {
 
       // Close menu
       setMenuOpen(false);
-      setSettingsSubmenuOpen(false);
     } catch (error) {
       console.error('Error clearing cache:', error);
       toast('Failed to clear cache', { type: 'error' });
@@ -782,7 +703,7 @@ const MediaTracker = () => {
     storageAdapter,
     onOpenHelp: () => {
       // Close other modals first
-      setCustomizeOpen(false);
+      setSettingsOpen(false);
       if (storageIndicatorRef.current) {
         storageIndicatorRef.current.closeModal();
       }
@@ -799,8 +720,9 @@ const MediaTracker = () => {
       if (storageIndicatorRef.current) {
         storageIndicatorRef.current.closeModal();
       }
-      // Then toggle customize
-      setCustomizeOpen(s => !s);
+      // Then toggle settings
+      setSettingsTab('Appearance');
+      setSettingsOpen(s => !s);
     },
     onSwitchStorage: openStorageIndicator,
     onFilterAll: () => setFilterType('all'),
@@ -816,9 +738,8 @@ const MediaTracker = () => {
     onConfirmBatchDelete: confirmBatchDelete,
     selectionMode,
     selectedCount,
-    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || showApiKeyManager || customizeOpen || searchResultItem || storageIndicatorOpen),
+    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || settingsOpen || showTrash || searchResultItem || storageIndicatorOpen),
     showHelp,
-    customizeOpen,
     showBatchDeleteConfirm
   });
 
@@ -839,6 +760,7 @@ const MediaTracker = () => {
             // Try to reconnect (retrieve stored handle and verify permissions)
             console.log('Attempting to restore File System connection...');
             await adapter.tryReconnect();
+            refreshStorageAdapter(adapter);
 
             // If successful, load items
             await loadItems(adapter);
@@ -863,6 +785,7 @@ const MediaTracker = () => {
               // Try to reconnect silently (without showing popup)
               console.log('Attempting silent reconnection to Google Drive...');
               await adapter.tryReconnect();
+              refreshStorageAdapter(adapter);
 
               // If successful, load items
               await loadItems(adapter);
@@ -999,12 +922,12 @@ const MediaTracker = () => {
     setIsStorageConnected(connected);
   }, [storageAdapter, storageInfo]);
 
-  // Auto-show API key modal when storage is connected and no API key is configured
+  // Auto-show settings on API Keys tab when storage connects and no key is configured
   useEffect(() => {
     if (storageAdapter && isStorageConnected && !hasApiKey()) {
-      // Small delay to ensure the storage connection UI has settled
       const timer = setTimeout(() => {
-        setShowApiKeyManager(true);
+        setSettingsTab('API Keys');
+        setSettingsOpen(true);
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -1025,7 +948,7 @@ const MediaTracker = () => {
     }
 
     // If the API key modal is currently open, defer until it closes
-    if (showApiKeyManager) return;
+    if (settingsOpen) return;
 
     let cancelled = false;
 
@@ -1044,8 +967,8 @@ const MediaTracker = () => {
         setTimeout(async () => {
           if (cancelled) return;
 
-          // Double-check that API modal isn't open (could have opened during delay)
-          if (showApiKeyManager) return;
+          // Double-check that settings modal isn't open (could have opened during delay)
+          if (settingsOpen) return;
 
           // Show the nicer modal prompt instead of a native confirm
           setShowObsidianBaseModal(true);
@@ -1062,7 +985,7 @@ const MediaTracker = () => {
     return () => {
       cancelled = true;
     };
-  }, [storageAdapter, isStorageConnected, showApiKeyManager]);
+  }, [storageAdapter, isStorageConnected, settingsOpen]);
 
   // Handler invoked by the ObsidianBaseModal when user chooses to create (or cancels)
   const handleCreateObsidianBase = async (dontAsk = false) => {
@@ -1234,65 +1157,25 @@ const MediaTracker = () => {
               )}
             </div>
 
-            <div
-              ref={settingsContainerRef}
-              className="relative"
-              onMouseEnter={handleSettingsSubmenuEnter}
-              onMouseLeave={handleSettingsSubmenuLeave}
-            >
+            <div>
               <button
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-white justify-between transition-colors group"
+                onClick={() => { setSettingsTab('Appearance'); setSettingsOpen(true); setMenuOpen(false); }}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-white transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </div>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                <Settings className="w-4 h-4" />
+                Settings
               </button>
-
-              {settingsSubmenuOpen && (
-                <div className={`absolute top-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-1 text-white min-w-[180px] max-w-[220px] z-50 animate-in duration-150 ${settingsSubmenuPosition === 'left'
-                  ? 'right-full mr-2 slide-in-from-right-2'
-                  : 'left-full ml-2 slide-in-from-left-2'
-                  }`}>
-                  <button
-                    onClick={() => { setShowApiKeyManager(true); setMenuOpen(false); setSettingsSubmenuOpen(false); }}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-700 flex items-center gap-2 text-white text-sm transition-colors"
-                  >
-                    <Key className="w-3 h-3" />
-                    API Keys
-                  </button>
-                  {storageAdapter?.getStorageType() === 'googledrive' && (
-                    <button
-                      onClick={handleClearCache}
-                      className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-700 flex items-center gap-2 text-white text-sm transition-colors"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Clear Cache
-                    </button>
-                  )}
-                  <div className="w-full px-3 py-2 rounded-md hover:bg-slate-700 flex items-center gap-2 text-white text-sm transition-colors">
-                    <label className="flex items-center justify-between cursor-pointer w-full">
-                      <span>
-                        <span className="text-sm font-medium">Half Star Ratings</span>
-                      </span>
-                      <button
-                        onClick={() => setHalfStarsEnabled(!halfStarsEnabled)}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${halfStarsEnabled ? 'bg-blue-600' : 'bg-slate-600'}`}
-                        tabIndex={0}
-                        aria-label="Toggle half star ratings"
-                      >
-                        <div
-                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${halfStarsEnabled ? 'translate-x-6' : 'translate-x-0'}`}
-                        />
-                      </button>
-                    </label>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Undo Delete option intentionally removed from the menu */}
+
+            <button
+              onClick={() => { setShowTrash(true); setMenuOpen(false); }}
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-white"
+            >
+              <Trash2 className="w-4 h-4" />
+              View Trash
+            </button>
 
             <button
               onClick={() => { handleDisconnectStorage(); setMenuOpen(false); }}
@@ -1665,106 +1548,25 @@ const MediaTracker = () => {
         </div>
       )}
 
-      {/* Customize Panel */}
-      {customizeOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Customize Appearance</h2>
-              <button onClick={() => setCustomizeOpen(false)} className="p-1 hover:bg-slate-700 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Card Size */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Card Size: {cardSize.charAt(0).toUpperCase() + cardSize.slice(1)}
-                </label>
-                <div className="px-3">
-                  <input
-                    type="range"
-                    min="0"
-                    max="4"
-                    step="1"
-                    value={['tiny', 'small', 'medium', 'large', 'xlarge'].indexOf(cardSize)}
-                    onChange={(e) => {
-                      const sizes = ['tiny', 'small', 'medium', 'large', 'xlarge'];
-                      updateCardSize(sizes[parseInt(e.target.value)]);
-                    }}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
-                    style={{
-                      background: `linear-gradient(to right, var(--mt-highlight) 0%, var(--mt-highlight) ${(['tiny', 'small', 'medium', 'large', 'xlarge'].indexOf(cardSize) / 4) * 100}%, #475569 ${(['tiny', 'small', 'medium', 'large', 'xlarge'].indexOf(cardSize) / 4) * 100}%, #475569 100%)`
-                    }}
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>Tiny</span>
-                    <span>Small</span>
-                    <span>Medium</span>
-                    <span>Large</span>
-                    <span>X-Large</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Primary Color */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Primary Color</label>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Primary Color Presets */}
-                  {PRIMARY_COLOR_PRESETS.map((color, index) => (
-                    <button
-                      key={index}
-                      onClick={() => updatePrimaryColor(color)}
-                      className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${primaryColor === color ? 'border-white shadow-lg' : 'border-slate-600 hover:border-slate-400'
-                        }`}
-                      style={{ backgroundColor: color }}
-                      title={`Primary preset ${index + 1}`}
-                    />
-                  ))}
-                  {/* Primary Color Picker */}
-                  <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => updatePrimaryColor(e.target.value)}
-                    className="w-12 h-8 rounded border border-slate-600 hover:border-slate-400 cursor-pointer bg-transparent"
-                    title="Custom primary color"
-                  />
-                </div>
-              </div>
-
-              {/* Highlight Color */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Highlight Color</label>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Highlight Color Presets */}
-                  {HIGHLIGHT_COLOR_PRESETS.map((color, index) => (
-                    <button
-                      key={index}
-                      onClick={() => updateHighlightColor(color)}
-                      className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${highlightColor === color ? 'border-white shadow-lg' : 'border-slate-600 hover:border-slate-400'
-                        }`}
-                      style={{ backgroundColor: color }}
-                      title={`Highlight preset ${index + 1}`}
-                    />
-                  ))}
-                  {/* Highlight Color Picker */}
-                  <input
-                    type="color"
-                    value={highlightColor}
-                    onChange={(e) => updateHighlightColor(e.target.value)}
-                    className="w-12 h-8 rounded border border-slate-600 hover:border-slate-400 cursor-pointer bg-transparent"
-                    title="Custom highlight color"
-                  />
-                </div>
-              </div>
-
-              {/* Half Stars Setting */}
-              {/* Removed half-star toggle from customize panel */}
-            </div>
-          </div>
-        </div>
+      {/* Settings Modal */}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          initialTab={settingsTab}
+          primaryColor={primaryColor}
+          highlightColor={highlightColor}
+          cardSize={cardSize}
+          updatePrimaryColor={updatePrimaryColor}
+          updateHighlightColor={updateHighlightColor}
+          updateCardSize={updateCardSize}
+          resetTheme={resetTheme}
+          halfStarsEnabled={halfStarsEnabled}
+          setHalfStarsEnabled={setHalfStarsEnabled}
+          storageAdapter={storageAdapter}
+          onClearCache={handleClearCache}
+          omdbApiKey={omdbApiKey}
+          updateApiKey={updateApiKey}
+        />
       )}
 
       {/* Modals */}
@@ -1781,7 +1583,15 @@ const MediaTracker = () => {
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
-      {showApiKeyManager && <ApiKeyModal onClose={() => setShowApiKeyManager(false)} />}
+      
+      {showTrash && (
+        <TrashModal
+          storageAdapter={storageAdapter}
+          onClose={() => setShowTrash(false)}
+          onRestore={() => loadItems()}
+        />
+      )}
+      
       {showObsidianBaseModal && (
         <ObsidianBaseModal
           onClose={() => setShowObsidianBaseModal(false)}
@@ -1808,7 +1618,7 @@ const MediaTracker = () => {
             {!isDeleting ? (
               <>
                 <p className="text-slate-300 mb-6">
-                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? This action cannot be undone.
+                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? They can be recovered from the trash.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
@@ -1880,29 +1690,28 @@ const MediaTracker = () => {
           />
         )}
 
-        {/* Customize Button */}
+        {/* Settings Button */}
         <button
           onClick={() => {
-            // Close other modals first
             setShowHelp(false);
             if (storageIndicatorRef.current) {
               storageIndicatorRef.current.closeModal();
             }
-            // Then toggle customize
-            setCustomizeOpen(prev => !prev);
+            setSettingsTab('Appearance');
+            setSettingsOpen(prev => !prev);
           }}
           className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-all"
           style={{ backgroundColor: 'var(--mt-highlight)' }}
-          title="Customize Appearance"
+          title="Settings"
         >
-          <Palette className="w-5 h-5 text-white" />
+          <Settings className="w-5 h-5 text-white" />
         </button>
 
         {/* Help Button */}
         <button
           onClick={() => {
             // Close other modals first
-            setCustomizeOpen(false);
+            setSettingsOpen(false);
             if (storageIndicatorRef.current) {
               storageIndicatorRef.current.closeModal();
             }
