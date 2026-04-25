@@ -736,6 +736,33 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
    * @param {string} filename
    * @param {string} content
    */
+  async readFile(filename) {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to Google Drive');
+    }
+
+    try {
+      // Search for the file
+      const searchResponse = await window.gapi.client.drive.files.list({
+        q: `name='${filename.replace(/'/g, "\\'")}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+      });
+
+      if (searchResponse.result.files && searchResponse.result.files.length > 0) {
+        // File exists, download its content
+        const fileId = searchResponse.result.files[0].id;
+        const content = await this._downloadFile(fileId);
+        return content;
+      } else {
+        // File not found
+        return null;
+      }
+    } catch (error) {
+      console.error('Error reading file from Google Drive:', error);
+      throw new Error(`Failed to read file: ${error.message}`);
+    }
+  }
+
   async writeFile(filename, content) {
     if (!this.isConnected()) {
       throw new Error('Not connected to Google Drive');
@@ -744,7 +771,7 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
     try {
       // Check for existing file with the same name
       const searchResponse = await window.gapi.client.drive.files.list({
-        q: `name='${filename}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
+        q: `name='${filename.replace(/'/g, "\\'")}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
         fields: 'files(id, name)'
       });
 
@@ -769,7 +796,7 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
 
     try {
       const response = await window.gapi.client.drive.files.list({
-        q: `name='${filename}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
+        q: `name='${filename.replace(/'/g, "\\'")}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
         fields: 'files(id, name)'
       });
 

@@ -400,6 +400,12 @@ The importer intelligently matches movies across files by title, director, and y
 
 - **OMDb rate limits / API key**: If movie searches fail, confirm your OMDb key is configured in the app's API settings. OMDb requires a (free) API key you can get at <http://www.omdbapi.com/apikey.aspx>.
 
+## Configuration
+
+The app stores your preferences (theme colors, card size, half-star ratings, API keys) in a `.mmt.config` file in your storage directory. This allows settings to persist across sessions and sync across devices when using Google Drive.
+
+For detailed information about the configuration file format and options, see [CONFIG_FILE.md](CONFIG_FILE.md).
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information about the project structure, development guidelines, and how to contribute.

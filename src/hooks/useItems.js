@@ -373,6 +373,7 @@ export const useItems = () => {
     selectStorage,
     disconnectStorage,
     getAvailableStorageOptions,
-    applyBatchEdit
+    applyBatchEdit,
+    refreshStorageAdapter: (adapter) => setStorageAdapter(adapter)
   };
 };

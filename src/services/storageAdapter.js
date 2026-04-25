@@ -86,6 +86,15 @@ export class StorageAdapter {
   }
 
   /**
+   * Read an arbitrary file from storage
+   * @param {string} filename
+   * @returns {Promise<string|null>} File content or null if not found
+   */
+  async readFile(filename) {
+    throw new Error('readFile() must be implemented by subclass');
+  }
+
+  /**
    * List all items in the trash
    * @returns {Promise<object[]>} Array of trashed items with metadata
    */

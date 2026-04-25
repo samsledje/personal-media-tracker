@@ -249,6 +249,26 @@ export class FileSystemStorage extends StorageAdapter {
    * @param {string} filename
    * @param {string} content
    */
+  async readFile(filename) {
+    if (!this.directoryHandle) {
+      throw new Error('Please select a directory first');
+    }
+
+    try {
+      const fileHandle = await this.directoryHandle.getFileHandle(filename, { create: false });
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+      return content;
+    } catch (err) {
+      // File not found or read error
+      if (err.name === 'NotFoundError') {
+        return null;
+      }
+      console.error('Error reading file:', err);
+      throw new Error('Error reading file. Please try again.');
+    }
+  }
+
   async writeFile(filename, content) {
     if (!this.directoryHandle) {
       throw new Error('Please select a directory first');
