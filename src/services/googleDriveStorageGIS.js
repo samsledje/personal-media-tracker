@@ -866,7 +866,7 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
       for (const file of files) {
         if (file.name.endsWith('.md')) {
           try {
-            const content = await this._getFileContent(file.id);
+            const content = await this._downloadFile(file.id);
             const { metadata } = parseMarkdown(content);
 
             trashedItems.push({
