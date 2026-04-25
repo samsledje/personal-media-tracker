@@ -266,6 +266,102 @@ describe('AddEditModal', () => {
     });
   });
 
+  describe('duplicate detection', () => {
+    it('should call onDuplicate and show warning toast when saving a duplicate book', async () => {
+      const user = userEvent.setup();
+      const onDuplicate = vi.fn();
+      render(
+        <AddEditModal
+          {...defaultProps}
+          onDuplicate={onDuplicate}
+          initialItem={sampleBook}
+          allItems={[sampleBook]}
+        />
+      );
+
+      await user.click(screen.getByText('Save Item'));
+
+      expect(toast).toHaveBeenCalledWith(
+        `"${sampleBook.title}" is already in your library`,
+        { type: 'warning' }
+      );
+      expect(onDuplicate).toHaveBeenCalledWith(sampleBook);
+      expect(defaultProps.onSave).not.toHaveBeenCalled();
+    });
+
+    it('should call onDuplicate and show warning toast when saving a duplicate movie', async () => {
+      const user = userEvent.setup();
+      const onDuplicate = vi.fn();
+      render(
+        <AddEditModal
+          {...defaultProps}
+          onDuplicate={onDuplicate}
+          initialItem={sampleMovie}
+          allItems={[sampleMovie]}
+        />
+      );
+
+      await user.click(screen.getByText('Save Item'));
+
+      expect(toast).toHaveBeenCalledWith(
+        `"${sampleMovie.title}" is already in your library`,
+        { type: 'warning' }
+      );
+      expect(onDuplicate).toHaveBeenCalledWith(sampleMovie);
+      expect(defaultProps.onSave).not.toHaveBeenCalled();
+    });
+
+    it('should call onSave normally when item is not a duplicate', async () => {
+      const user = userEvent.setup();
+      const onDuplicate = vi.fn();
+      render(
+        <AddEditModal
+          {...defaultProps}
+          onDuplicate={onDuplicate}
+          initialItem={sampleBook}
+          allItems={[sampleMovie]}
+        />
+      );
+
+      await user.click(screen.getByText('Save Item'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledTimes(1);
+      expect(onDuplicate).not.toHaveBeenCalled();
+    });
+
+    it('should call onSave normally when allItems is empty', async () => {
+      const user = userEvent.setup();
+      const onDuplicate = vi.fn();
+      render(
+        <AddEditModal
+          {...defaultProps}
+          onDuplicate={onDuplicate}
+          initialItem={sampleBook}
+          allItems={[]}
+        />
+      );
+
+      await user.click(screen.getByText('Save Item'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledTimes(1);
+      expect(onDuplicate).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when onDuplicate prop is omitted and duplicate is found', async () => {
+      const user = userEvent.setup();
+      render(
+        <AddEditModal
+          {...defaultProps}
+          initialItem={sampleBook}
+          allItems={[sampleBook]}
+        />
+      );
+
+      await expect(user.click(screen.getByText('Save Item'))).resolves.not.toThrow();
+      expect(defaultProps.onSave).not.toHaveBeenCalled();
+    });
+  });
+
   describe('accessibility', () => {
     it('should have proper modal structure', () => {
       render(<AddEditModal {...defaultProps} />);

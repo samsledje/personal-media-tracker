@@ -57,6 +57,7 @@ const exportMovies = (items) => {
 const MediaTracker = () => {
   // Modal states
   const [selectedItem, setSelectedItem] = useState(null);
+  const [openInEditMode, setOpenInEditMode] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -1656,10 +1657,11 @@ const MediaTracker = () => {
       {selectedItem && (
         <ItemDetailModal
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => { setSelectedItem(null); setOpenInEditMode(false); }}
           onSave={(item) => {
             saveItem(item);
             setSelectedItem(null);
+            setOpenInEditMode(false);
           }}
           onQuickSave={(item) => {
             // persist change but keep modal open
@@ -1668,12 +1670,14 @@ const MediaTracker = () => {
           onDelete={(item) => {
             deleteItem(item);
             setSelectedItem(null);
+            setOpenInEditMode(false);
           }}
           hexToRgba={hexToRgba}
           highlightColor={highlightColor}
           items={filteredAndSortedItems}
           onNavigate={setSelectedItem}
           allTags={allTags}
+          initialEditMode={openInEditMode}
         />
       )}
 
@@ -1738,8 +1742,15 @@ const MediaTracker = () => {
             setIsAdding(false);
             setSearchResultItem(null);
           }}
+          onDuplicate={(duplicate) => {
+            setIsAdding(false);
+            setSearchResultItem(null);
+            setSelectedItem(duplicate);
+            setOpenInEditMode(true);
+          }}
           initialItem={searchResultItem}
           allTags={allTags}
+          allItems={items}
         />
       )}
 
