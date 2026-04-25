@@ -131,7 +131,7 @@ describe('StorageSelector', () => {
 
       render(<StorageSelector {...propsWithDisabled} />);
 
-      expect(screen.getByText('Not supported on this device')).toBeInTheDocument();
+      expect(screen.getByText('Not supported on this browser')).toBeInTheDocument();
     });
 
     it('should apply disabled styling to unsupported options', () => {

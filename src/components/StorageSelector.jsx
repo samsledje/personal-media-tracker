@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FolderOpen, Cloud, Loader2 } from 'lucide-react';
 import GoogleDriveConfigModal from './modals/GoogleDriveConfigModal.jsx';
 
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 /**
  * Storage Selector Component
  * Allows users to choose between local files and Google Drive storage
@@ -107,7 +109,12 @@ const StorageSelector = ({ onStorageSelect, availableOptions = [], error, isLoad
                 {getIcon(option.type)}
                 <div>
                   <h3 className="text-lg sm:text-xl font-semibold text-white">{option.name}</h3>
-                  {!option.supported && (
+                  {!option.supported && option.type === 'filesystem' && (
+                    <span className="text-sm text-amber-400">
+                      {isMobile() ? 'Not available on mobile — use Google Drive' : 'Not supported on this browser'}
+                    </span>
+                  )}
+                  {!option.supported && option.type !== 'filesystem' && (
                     <span className="text-sm text-red-400">Not supported on this device</span>
                   )}
                 </div>
