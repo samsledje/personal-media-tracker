@@ -34,7 +34,7 @@ Navigate your entire library without touching the mouse. Comprehensive shortcuts
 
 ## Requirements
 
-- Node.js (14+ recommended) and npm or yarn
+- Node.js 20+ (matches CI) and npm or yarn
 - For **local storage**: A Chromium-based desktop browser (Chrome, Edge) that supports the File System Access API
 - For **Google Drive**: Any modern browser (Chrome, Firefox, Safari, Edge)
 
@@ -399,6 +399,12 @@ The importer intelligently matches movies across files by title, director, and y
 ### API Issues
 
 - **OMDb rate limits / API key**: If movie searches fail, confirm your OMDb key is configured in the app's API settings. OMDb requires a (free) API key you can get at <http://www.omdbapi.com/apikey.aspx>.
+
+## Configuration
+
+The app stores your preferences (theme colors, card size, half-star ratings, API keys) in a `.mmt.config` file in your storage directory. This allows settings to persist across sessions and sync across devices when using Google Drive.
+
+For detailed information about the configuration file format and options, see [CONFIG_FILE.md](CONFIG_FILE.md).
 
 ## Contributing
 

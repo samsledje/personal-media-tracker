@@ -1,47 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { STATUS_TYPES, STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from '../../constants/index.js';
-
-/**
- * Test utility functions for status handling
- * These functions are currently defined in components but should be tested
- */
-
-// Mock implementations of the status utility functions
-const getStatusIcon = (status, className = '') => {
-  const iconType = STATUS_ICONS[status];
-  switch (iconType) {
-    case 'bookmark':
-      return `Bookmark-${className}`;
-    case 'layers':
-      return `Layers-${className}`;
-    case 'book-open':
-      return `BookOpen-${className}`;
-    case 'check-circle':
-      return `CheckCircle-${className}`;
-    case 'play-circle':
-      return `PlayCircle-${className}`;
-    case 'x-circle':
-      return `XCircle-${className}`;
-    default:
-      return `Bookmark-${className}`;
-  }
-};
-
-const getStatusColorClass = (status) => {
-  const colorType = STATUS_COLORS[status];
-  switch (colorType) {
-    case 'blue':
-      return 'bg-blue-500';
-    case 'yellow':
-      return 'bg-yellow-500';
-    case 'green':
-      return 'bg-green-500';
-    case 'red':
-      return 'bg-red-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
+import { getStatusIcon, getStatusColorClass } from '../statusUtils.jsx';
 
 describe('Status System', () => {
   describe('STATUS_TYPES', () => {
@@ -97,23 +56,25 @@ describe('Status System', () => {
   });
 
   describe('getStatusIcon', () => {
-    it('should return correct icon for each status', () => {
-      expect(getStatusIcon('to-read')).toBe('Layers-');
-      expect(getStatusIcon('reading')).toBe('BookOpen-');
-      expect(getStatusIcon('read')).toBe('CheckCircle-');
-      expect(getStatusIcon('to-watch')).toBe('Layers-');
-      expect(getStatusIcon('watching')).toBe('PlayCircle-');
-      expect(getStatusIcon('watched')).toBe('CheckCircle-');
-      expect(getStatusIcon('dnf')).toBe('XCircle-');
+    it('should return a React element for each status', () => {
+      const statuses = ['to-read', 'reading', 'read', 'to-watch', 'watching', 'watched', 'dnf'];
+      for (const status of statuses) {
+        const el = getStatusIcon(status);
+        expect(el).not.toBeNull();
+        expect(typeof el).toBe('object');
+        expect(el.type).toBeDefined();
+      }
     });
 
-    it('should apply className to icons', () => {
-      expect(getStatusIcon('read', 'text-green-500')).toBe('CheckCircle-text-green-500');
-      expect(getStatusIcon('dnf', 'w-4 h-4')).toBe('XCircle-w-4 h-4');
+    it('should pass className prop to icon element', () => {
+      expect(getStatusIcon('read', 'text-green-500').props.className).toBe('text-green-500');
+      expect(getStatusIcon('dnf', 'w-4 h-4').props.className).toBe('w-4 h-4');
     });
 
     it('should return default icon for unknown status', () => {
-      expect(getStatusIcon('unknown')).toBe('Bookmark-');
+      const el = getStatusIcon('unknown');
+      expect(el).not.toBeNull();
+      expect(typeof el).toBe('object');
     });
   });
 

@@ -35,7 +35,6 @@ export const useKeyboardNavigation = ({
   hasOpenModal = false,
   // Individual modal states for toggle functionality
   showHelp = false,
-  customizeOpen = false,
   showBatchDeleteConfirm = false
 } = {}) => {
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -300,7 +299,6 @@ export const useKeyboardNavigation = ({
     selectedCount,
     hasOpenModal,
     showHelp,
-    customizeOpen,
     showBatchDeleteConfirm,
     onOpenHelp,
     onFocusSearch,

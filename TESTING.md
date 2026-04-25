@@ -23,12 +23,13 @@ npm run test:ui
 npm run test:coverage
 
 # Run E2E tests
-# Not currently implemented
-#npm run test:e2e
+npm run test:e2e
 
 # Run E2E tests with UI
-# Not currently implemented
-#npm test:e2e:ui
+npm run test:e2e:ui
+
+# Run E2E tests in debug mode
+npm run test:e2e:debug
 ```
 
 ## Test Structure
@@ -39,8 +40,13 @@ src/
 ├── services/__tests__/       # Tests for external API services
 ├── hooks/__tests__/          # Tests for custom React hooks
 ├── components/__tests__/     # Tests for React components
+├── integration/__tests__/    # Integration tests for workflows
 └── test/
     ├── setup.js              # Global test configuration
+    ├── helpers/               # Test utility helpers
+    │   ├── testUtils.js      # Common test utilities
+    │   ├── mockHelpers.js    # Mock factory functions
+    │   └── assertionHelpers.js # Custom assertions
     ├── mocks/                # Reusable mock implementations
     │   ├── apis.js           # Mock API responses
     │   ├── localStorage.js   # Mock localStorage
@@ -48,6 +54,14 @@ src/
     └── fixtures/             # Sample test data
         ├── sampleItems.js    # Sample books and movies
         └── sampleCSV.js      # Sample CSV data
+tests/
+└── e2e/                      # End-to-end tests (Playwright)
+    ├── storage-selection.spec.js
+    ├── item-crud.spec.js
+    ├── search-and-add.spec.js
+    ├── filtering-sorting.spec.js
+    ├── keyboard-shortcuts.spec.js
+    └── import-export.spec.js
 ```
 
 ## Writing Tests
@@ -208,10 +222,17 @@ describe('ItemCard', () => {
 
 ## Test Coverage Goals
 
-- **Utils**: 90%+ coverage
-- **Hooks**: 85%+ coverage
-- **Services**: 80%+ coverage
-- **Components**: 75%+ coverage
+- **Utils**: 95%+ coverage
+- **Hooks**: 90%+ coverage
+- **Services**: 85%+ coverage
+- **Components**: 80%+ coverage
+- **Overall**: 85%+ coverage
+
+Current thresholds are enforced in `vitest.config.js`:
+- Lines: 85%
+- Functions: 68%
+- Branches: 80%
+- Statements: 85%
 
 View coverage report:
 
@@ -306,14 +327,47 @@ it('should update state', () => {
 ### Testing User Interactions
 
 ```javascript
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-it('should handle click', () => {
+it('should handle click', async () => {
+  const user = userEvent.setup();
   const mockFn = vi.fn();
   render(<Button onClick={mockFn}>Click me</Button>);
   
-  fireEvent.click(screen.getByText('Click me'));
+  await user.click(screen.getByText('Click me'));
   expect(mockFn).toHaveBeenCalledTimes(1);
+});
+```
+
+### Using Test Helpers
+
+```javascript
+import { createMockStorageAdapter } from '../../test/helpers/mockHelpers.js';
+import { expectValidItem } from '../../test/helpers/assertionHelpers.js';
+
+it('should load items', async () => {
+  const mockStorage = createMockStorageAdapter({
+    items: [{ id: '1', title: 'Test', type: 'book' }]
+  });
+  
+  const items = await mockStorage.loadItems();
+  expectValidItem(items[0]);
+});
+```
+
+### Testing Import Workflows
+
+```javascript
+import { processImportFile } from '../../utils/importUtils.js';
+import { createMockFile } from '../../test/helpers/mockHelpers.js';
+
+it('should import CSV file', async () => {
+  const csvContent = 'Title,Author\nBook,Author';
+  const file = createMockFile(csvContent, 'test.csv');
+  
+  const result = await processImportFile(file, [], mockSaveItem, mockOnProgress);
+  expect(result.added).toBeGreaterThan(0);
 });
 ```
 
@@ -363,19 +417,97 @@ Tests run automatically on:
 
 See `.github/workflows/test.yml` for the CI configuration.
 
+CI currently runs:
+
+- `npm run test:coverage` (unit/integration with coverage gate)
+- `npm run test:e2e` as a Chromium smoke suite
+
+## Test Helpers
+
+The test suite includes reusable helpers in `src/test/helpers/`:
+
+### testUtils.js
+- `renderWithProviders()` - Render components with context providers
+- `waitForAsync()` - Wait for async operations
+- `createDelayedMock()` - Create mocks with delays
+- `flushPromises()` - Flush pending promises
+- `createMockAbortSignal()` - Create AbortSignal mocks
+- `createMockFile()` - Create File objects for testing
+
+### mockHelpers.js
+- `createMockStorageAdapter()` - Create storage adapter mocks
+- `createMockItems()` - Generate test items
+- `createMockApiResponse()` - Create API response mocks
+- `createMockFetch()` - Create fetch mocks
+- `createMockProgressCallback()` - Create progress callback mocks
+- `createMockLocalStorage()` - Create localStorage mocks
+
+### assertionHelpers.js
+- `expectValidItem()` - Assert item has required fields
+- `expectValidBook()` / `expectValidMovie()` - Type-specific assertions
+- `expectValidMarkdown()` - Assert valid markdown structure
+- `expectValidStorageAdapter()` - Assert storage adapter interface
+- `expectValidProgress()` - Assert progress callback data
+- `expectValidRating()` - Assert valid rating values
+
+**Example usage:**
+```javascript
+import { createMockStorageAdapter } from '../../test/helpers/mockHelpers.js';
+import { expectValidItem } from '../../test/helpers/assertionHelpers.js';
+
+const mockStorage = createMockStorageAdapter({ items: [...] });
+const item = await mockStorage.loadItems();
+expectValidItem(item[0]);
+```
+
+## Integration Tests
+
+Integration tests are located in `src/integration/__tests__/` and test complete workflows:
+
+- **storageWorkflows.test.jsx** - Storage selection, switching, reconnection
+- **importWorkflows.test.jsx** - CSV/ZIP import flows with API enrichment
+- **searchWorkflows.test.jsx** - Online search → add → edit workflows
+- **batchOperations.test.jsx** - Batch edit, delete, restore operations
+- **itemManagement.test.jsx** - Complete CRUD workflows
+
+Integration tests use longer timeouts (15 seconds) and test real user workflows.
+
+## E2E Tests
+
+End-to-end tests use Playwright and are located in `tests/e2e/`:
+
+- **storage-selection.spec.js** - Storage selection and persistence
+- **item-crud.spec.js** - Create, read, update, delete items
+- **search-and-add.spec.js** - Online search and adding items
+- **filtering-sorting.spec.js** - Filtering and sorting functionality
+- **keyboard-shortcuts.spec.js** - Keyboard navigation
+- **import-export.spec.js** - CSV import/export flows
+
+E2E tests require the dev server to be running. Playwright will start it automatically.
+
 ## Current Status
 
 **Test Suite Progress:**
 
 - ✅ Infrastructure setup complete
-- ✅ Utility tests: 85 passing tests (markdownUtils, filterUtils, colorUtils)
-- 🟡 Service tests: 30 tests created (needs adjustments)
-- ❌ Hook tests: Not started
-- ❌ Component tests: Not started
-- ❌ Integration tests: Not started
-- ❌ E2E tests: Not started
+- ✅ Test helpers created (testUtils, mockHelpers, assertionHelpers)
+- ✅ Utility tests: Comprehensive coverage (markdownUtils, filterUtils, colorUtils, importUtils, coverUtils)
+- ✅ Service tests: Full coverage (openLibraryService, omdbService, configService, toastService, obsidianBase)
+- ✅ Hook tests: Complete (useItems, useFilters, useSelection, useTheme, useKeyboardNavigation, useOmdbApi, useHalfStars)
+- ✅ Component tests: Comprehensive (ItemCard, StorageIndicator, modals, forms)
+- ✅ Integration tests: Broad workflow coverage (storage, import, search, batch operations)
+- ✅ E2E tests: Stable smoke coverage for core UI paths (Playwright)
+- ✅ Test configuration: Coverage thresholds and smoke E2E enforced in CI
 
-See [TEST_SUITE_STATUS.md](./TEST_SUITE_STATUS.md) for detailed progress.
+### Quarantined/Deferred Tests
+
+Some tests remain intentionally skipped due to known environment constraints and are tracked in-file with TODO notes:
+
+- `src/components/modals/__tests__/BatchEditModal.test.jsx` (text-input + checkbox interaction edge cases)
+- `src/components/__tests__/LandingPage.test.jsx` (carousel timing/interval behavior)
+- `src/integration/__tests__/itemManagement.test.jsx` (complex modal + keyboard lifecycle in JSDOM)
+
+These are candidates for future migration to browser-level E2E assertions.
 
 ## Contributing
 
@@ -385,12 +517,58 @@ When adding new features:
 3. Aim for coverage goals (90%+ for utils, 85%+ for hooks, etc.)
 4. Update this documentation if adding new testing patterns
 
+## Performance Testing
+
+The test suite includes performance considerations:
+
+- Tests with large datasets (1000+ items) verify scalability
+- Batch operations are tested for efficiency
+- Import operations are tested with progress callbacks
+- Test timeouts are configured appropriately (10s default, 15s for integration)
+
+## Accessibility Testing
+
+Accessibility tests verify:
+- ARIA labels are present and correct
+- Keyboard navigation works as expected
+- Screen reader compatibility
+- Focus management in modals
+
+Use `@testing-library/jest-dom` matchers for accessibility assertions:
+```javascript
+expect(element).toHaveAttribute('aria-label', 'Close modal');
+expect(element).toHaveFocus();
+```
+
+## Troubleshooting
+
+### Tests failing with timeout errors
+- Increase timeout in test: `vi.setConfig({ testTimeout: 30000 })`
+- Check for slow async operations
+- Verify mocks are properly set up
+
+### E2E tests failing
+- Ensure dev server is running: `npm run dev`
+- Check Playwright is installed: `npx playwright install`
+- Verify browser compatibility
+
+### Coverage not meeting thresholds
+- Run `npm run test:coverage` to see detailed report
+- Check `coverage/index.html` for line-by-line coverage
+- Focus on uncovered branches and edge cases
+
+### Mock not working as expected
+- Verify mock is set up in `beforeEach`
+- Check mock is not being overridden
+- Use `vi.clearAllMocks()` to reset between tests
+
 ## Resources
 
 - [Vitest Documentation](https://vitest.dev/)
 - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 - [Playwright Documentation](https://playwright.dev/)
 - [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
+- [User Event Documentation](https://testing-library.com/docs/user-event/intro/)
 
 ## Getting Help
 
