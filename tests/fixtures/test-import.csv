@@ -1,0 +1,2 @@
+title,type,author,year,status,rating,tags,notes
+Test Fixture Book,book,Fixture Author,2024,to-read,4,fixture;import,Created from Playwright fixture

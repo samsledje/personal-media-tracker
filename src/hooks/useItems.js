@@ -255,11 +255,17 @@ export const useItems = () => {
    */
   const disconnectStorage = async () => {
     if (storageAdapter) {
-      await storageAdapter.disconnect();
-      setStorageAdapter(null);
-      setStorageInfo(null);
-      setItems([]);
-      setUndoStack([]);
+      try {
+        await storageAdapter.disconnect();
+      } catch (error) {
+        // Handle disconnect errors gracefully
+        console.error('Error disconnecting storage:', error);
+      } finally {
+        setStorageAdapter(null);
+        setStorageInfo(null);
+        setItems([]);
+        setUndoStack([]);
+      }
     }
   };
 
