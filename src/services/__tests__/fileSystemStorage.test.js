@@ -830,4 +830,184 @@ describe('FileSystemStorage', () => {
       await expect(storage._getOrCreateTrashDir()).rejects.toThrow('Permission denied');
     });
   });
+
+  describe('listTrash', () => {
+    it('should throw error if not connected', async () => {
+      await expect(storage.listTrash()).rejects.toThrow('Please select a directory first');
+    });
+
+    it('should list all items in trash', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashEntries = [
+        {
+          kind: 'file',
+          name: 'test-item.md',
+          getFile: vi.fn().mockResolvedValue({
+            text: vi.fn().mockResolvedValue('---\ntitle: Test\n---'),
+            lastModified: 1234567890000,
+            size: 1024
+          })
+        },
+        {
+          kind: 'file',
+          name: 'another-item.md',
+          getFile: vi.fn().mockResolvedValue({
+            text: vi.fn().mockResolvedValue('---\ntitle: Another\n---'),
+            lastModified: 1234567890000,
+            size: 2048
+          })
+        }
+      ];
+      
+      mockTrashHandle.values = vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const entry of mockTrashEntries) {
+            yield entry;
+          }
+        }
+      });
+
+      const items = await storage.listTrash();
+
+      expect(items).toHaveLength(2);
+      expect(items[0]).toMatchObject({
+        filename: 'test-item.md',
+        title: 'Test Item',
+        deletedAt: 1234567890000,
+        size: 1024
+      });
+    });
+
+    it('should handle errors loading individual trash items', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashEntries = [
+        {
+          kind: 'file',
+          name: 'test-item.md',
+          getFile: vi.fn().mockRejectedValue(new Error('Read error'))
+        }
+      ];
+      
+      mockTrashHandle.values = vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const entry of mockTrashEntries) {
+            yield entry;
+          }
+        }
+      });
+
+      const items = await storage.listTrash();
+
+      expect(items).toHaveLength(0);
+    });
+  });
+
+  describe('restoreFromTrash', () => {
+    it('should throw error if not connected', async () => {
+      await expect(storage.restoreFromTrash('test.md')).rejects.toThrow('Please select a directory first');
+    });
+
+    it('should restore item from trash', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+          text: vi.fn().mockResolvedValue('test content')
+        })
+      };
+      
+      mockTrashHandle.getFileHandle = vi.fn().mockResolvedValue(mockTrashFileHandle);
+      mockTrashHandle.removeEntry = vi.fn();
+      mockDirectoryHandle.getFileHandle = vi.fn()
+        .mockRejectedValueOnce(new Error('Not found'))
+        .mockResolvedValueOnce(mockFileHandle);
+
+      const result = await storage.restoreFromTrash('test.md');
+
+      expect(result).toBe('test.md');
+      expect(mockWritable.write).toHaveBeenCalledWith('test content');
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledWith('test.md');
+    });
+
+    it('should append timestamp if file already exists', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+          text: vi.fn().mockResolvedValue('test content')
+        })
+      };
+      
+      mockTrashHandle.getFileHandle = vi.fn().mockResolvedValue(mockTrashFileHandle);
+      mockTrashHandle.removeEntry = vi.fn();
+      mockDirectoryHandle.getFileHandle = vi.fn()
+        .mockResolvedValueOnce(mockFileHandle)
+        .mockResolvedValueOnce(mockFileHandle);
+
+      const result = await storage.restoreFromTrash('test.md');
+
+      expect(result).toMatch(/test-restored-\d+\.md/);
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledWith('test.md');
+    });
+  });
+
+  describe('emptyTrash', () => {
+    it('should throw error if not connected', async () => {
+      await expect(storage.emptyTrash()).rejects.toThrow('Please select a directory first');
+    });
+
+    it('should delete all items in trash', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashEntries = [
+        { kind: 'file', name: 'test-1.md' },
+        { kind: 'file', name: 'test-2.md' },
+        { kind: 'file', name: 'test-3.md' }
+      ];
+      
+      mockTrashHandle.values = vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const entry of mockTrashEntries) {
+            yield entry;
+          }
+        }
+      });
+      mockTrashHandle.removeEntry = vi.fn();
+
+      const count = await storage.emptyTrash();
+
+      expect(count).toBe(3);
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledTimes(3);
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledWith('test-1.md');
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledWith('test-2.md');
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledWith('test-3.md');
+    });
+
+    it('should continue on individual item deletion errors', async () => {
+      storage.directoryHandle = mockDirectoryHandle;
+      
+      const mockTrashEntries = [
+        { kind: 'file', name: 'test-1.md' },
+        { kind: 'file', name: 'test-2.md' }
+      ];
+      
+      mockTrashHandle.values = vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const entry of mockTrashEntries) {
+            yield entry;
+          }
+        }
+      });
+      mockTrashHandle.removeEntry = vi.fn()
+        .mockResolvedValueOnce()
+        .mockRejectedValueOnce(new Error('Delete failed'));
+
+      const count = await storage.emptyTrash();
+
+      expect(count).toBe(1);
+      expect(mockTrashHandle.removeEntry).toHaveBeenCalledTimes(2);
+    });
+  });
 });

@@ -338,7 +338,7 @@ const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRg
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-sm w-full">
               <h3 className="text-lg font-bold mb-4">Delete Item</h3>
               <p className="text-slate-300 mb-6">
-                Are you sure you want to delete "{item.title}"? This action cannot be undone.
+                Are you sure you want to delete "{item.title}"? It can be recovered from the trash.
               </p>
               <div className="flex gap-3 justify-end">
                 <button

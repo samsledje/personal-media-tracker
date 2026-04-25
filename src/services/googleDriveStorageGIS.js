@@ -844,6 +844,155 @@ export class GoogleDriveStorageGIS extends StorageAdapter {
     }
   }
 
+  /**
+   * List all items in the trash folder
+   * @returns {Promise<object[]>} Array of trashed items with metadata
+   */
+  async listTrash() {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to Google Drive');
+    }
+
+    try {
+      const response = await window.gapi.client.drive.files.list({
+        q: `'${this.trashFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name, size, modifiedTime)',
+        orderBy: 'modifiedTime desc'
+      });
+
+      const files = response.result.files || [];
+      const trashedItems = [];
+
+      for (const file of files) {
+        if (file.name.endsWith('.md')) {
+          try {
+            const content = await this._downloadFile(file.id);
+            const { metadata } = parseMarkdown(content);
+
+            trashedItems.push({
+              id: file.id,
+              filename: file.name,
+              title: metadata.title || 'Untitled',
+              type: metadata.type || 'book',
+              author: metadata.author,
+              director: metadata.director,
+              year: metadata.year,
+              deletedAt: new Date(file.modifiedTime).getTime(),
+              size: file.size
+            });
+          } catch (err) {
+            console.error(`Error loading trash item ${file.name}:`, err);
+          }
+        }
+      }
+
+      return trashedItems;
+    } catch (error) {
+      console.error('Error listing trash:', error);
+      throw new Error(`Error listing trash: ${error.message}`);
+    }
+  }
+
+  /**
+   * Restore an item from trash by filename
+   * @param {string} filename - Filename of the item to restore
+   * @returns {Promise<string>} Restored item identifier
+   */
+  async restoreFromTrash(filename) {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to Google Drive');
+    }
+
+    try {
+      // Escape filename for use in query - escape both backslashes and single quotes
+      const escapedFilename = filename.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      
+      // Find the file in trash folder
+      const searchResponse = await window.gapi.client.drive.files.list({
+        q: `name='${escapedFilename}' and '${this.trashFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+      });
+
+      if (!searchResponse.result.files || searchResponse.result.files.length === 0) {
+        throw new Error(`File ${filename} not found in trash`);
+      }
+
+      const file = searchResponse.result.files[0];
+
+      // Check if a file with the same name already exists in the main folder
+      const existingResponse = await window.gapi.client.drive.files.list({
+        q: `name='${escapedFilename}' and '${this.mediaTrackerFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+      });
+
+      let restoreName = filename;
+      if (existingResponse.result.files && existingResponse.result.files.length > 0) {
+        // Generate a new name with timestamp
+        restoreName = `${filename.replace(/\.md$/, '')}-restored-${Date.now()}.md`;
+        
+        // Rename the file
+        await window.gapi.client.drive.files.update({
+          fileId: file.id,
+          resource: {
+            name: restoreName
+          },
+          fields: 'id, name'
+        });
+      }
+
+      // Move file from trash to main folder
+      await window.gapi.client.drive.files.update({
+        fileId: file.id,
+        addParents: this.mediaTrackerFolderId,
+        removeParents: this.trashFolderId,
+        fields: 'id, parents'
+      });
+
+      return restoreName;
+    } catch (error) {
+      console.error('Error restoring from trash:', error);
+      throw new Error(`Error restoring file: ${error.message}`);
+    }
+  }
+
+  /**
+   * Permanently delete all items from trash
+   * @returns {Promise<number>} Number of items deleted
+   */
+  async emptyTrash() {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to Google Drive');
+    }
+
+    try {
+      const response = await window.gapi.client.drive.files.list({
+        q: `'${this.trashFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+      });
+
+      const files = response.result.files || [];
+      let deleteCount = 0;
+
+      for (const file of files) {
+        if (file.name.endsWith('.md')) {
+          try {
+            await window.gapi.client.drive.files.delete({
+              fileId: file.id
+            });
+            deleteCount++;
+          } catch (err) {
+            console.error(`Error deleting ${file.name}:`, err);
+          }
+        }
+      }
+
+      return deleteCount;
+    } catch (error) {
+      console.error('Error emptying trash:', error);
+      throw new Error(`Error emptying trash: ${error.message}`);
+    }
+  }
+
   // Method to get information about current vs new folder for migration warnings
   async getMigrationInfo(newFolderName) {
     try {

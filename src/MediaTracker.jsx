@@ -20,6 +20,7 @@ import AddEditModal from './components/modals/AddEditModal.jsx';
 import ApiKeyModal from './components/modals/ApiKeyModal.jsx';
 import ObsidianBaseModal from './components/modals/ObsidianBaseModal.jsx';
 import FilterModal from './components/modals/FilterModal.jsx';
+import TrashModal from './components/modals/TrashModal.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import StorageIndicator from './components/StorageIndicator.jsx';
 import ItemCard from './components/cards/ItemCard.jsx';
@@ -62,6 +63,7 @@ const MediaTracker = () => {
   const [showBatchEdit, setShowBatchEdit] = useState(false);
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportSubmenuOpen, setExportSubmenuOpen] = useState(false);
@@ -769,7 +771,7 @@ const MediaTracker = () => {
     onConfirmBatchDelete: confirmBatchDelete,
     selectionMode,
     selectedCount,
-    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || showApiKeyManager || customizeOpen || searchResultItem || storageIndicatorOpen),
+    hasOpenModal: !!(selectedItem || isAdding || isSearching || showHelp || showBatchEdit || showBatchDeleteConfirm || showApiKeyManager || showTrash || customizeOpen || searchResultItem || storageIndicatorOpen),
     showHelp,
     customizeOpen,
     showBatchDeleteConfirm
@@ -1246,6 +1248,14 @@ const MediaTracker = () => {
             </div>
 
             {/* Undo Delete option intentionally removed from the menu */}
+
+            <button
+              onClick={() => { setShowTrash(true); setMenuOpen(false); }}
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2 text-white"
+            >
+              <Trash2 className="w-4 h-4" />
+              View Trash
+            </button>
 
             <button
               onClick={() => { handleDisconnectStorage(); setMenuOpen(false); }}
@@ -1735,6 +1745,15 @@ const MediaTracker = () => {
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showApiKeyManager && <ApiKeyModal onClose={() => setShowApiKeyManager(false)} />}
+      
+      {showTrash && (
+        <TrashModal
+          storageAdapter={storageAdapter}
+          onClose={() => setShowTrash(false)}
+          onRestore={() => loadItems()}
+        />
+      )}
+      
       {showObsidianBaseModal && (
         <ObsidianBaseModal
           onClose={() => setShowObsidianBaseModal(false)}
@@ -1761,7 +1780,7 @@ const MediaTracker = () => {
             {!isDeleting ? (
               <>
                 <p className="text-slate-300 mb-6">
-                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? This action cannot be undone.
+                  Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}? They can be recovered from the trash.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
