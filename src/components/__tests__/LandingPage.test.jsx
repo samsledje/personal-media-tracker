@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import LandingPage from '../LandingPage';
 
 // Mock StorageSelector component
@@ -103,29 +104,80 @@ describe('LandingPage', () => {
       expect(indicators.length).toBe(8);
     });
 
-    // TODO: Complex timing tests with useEffect carousel - skip for now
-    it.skip('should advance to next slide when next button clicked', async () => {
-      // Carousel transitions are complex with timers and state
+    it('should advance to next slide when next button clicked', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const img = screen.getByAltText(/keep track of books and movies/i);
+      expect(img.src).toContain('main-panel.jpg');
+
+      act(() => { fireEvent.click(screen.getByLabelText('Next screenshot')); });
+      act(() => { vi.advanceTimersByTime(400); });
+
+      const img2 = screen.getByAltText(/search open library/i);
+      expect(img2.src).toContain('online-search.jpg');
     });
 
-    it.skip('should go to previous slide when prev button clicked', async () => {
-      // Carousel transitions are complex with timers and state
+    it('should go to previous slide when prev button clicked', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      act(() => { fireEvent.click(screen.getByLabelText('Next screenshot')); });
+      act(() => { vi.advanceTimersByTime(400); });
+
+      act(() => { fireEvent.click(screen.getByLabelText('Previous screenshot')); });
+      act(() => { vi.advanceTimersByTime(400); });
+
+      const img = screen.getByAltText(/keep track of books and movies/i);
+      expect(img.src).toContain('main-panel.jpg');
     });
 
-    it.skip('should go to specific slide when indicator clicked', async () => {
-      // Carousel transitions are complex with timers and state
+    it('should go to specific slide when indicator clicked', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const indicators = screen.getAllByLabelText(/go to screenshot \d+/i);
+      act(() => { fireEvent.click(indicators[2]); }); // Go to slide 3
+      act(() => { vi.advanceTimersByTime(1200); });
+
+      const img = screen.getByAltText(/manually add or edit/i);
+      expect(img.src).toContain('manual-edit.jpg');
     });
 
-    it.skip('should auto-advance slides', async () => {
-      // Auto-advance involves intervals and transitions
+    it('should auto-advance slides', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      expect(screen.getByAltText(/keep track of books and movies/i).src).toContain('main-panel.jpg');
+
+      act(() => { vi.advanceTimersByTime(7000); }); // 6500ms interval + 300ms transition
+
+      const img2 = screen.getByAltText(/search open library/i);
+      expect(img2.src).toContain('online-search.jpg');
     });
 
-    it.skip('should stop auto-play when user clicks indicator', async () => {
-      // Auto-play state management is complex to test
+    it('should stop auto-play when user clicks indicator', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const indicators = screen.getAllByLabelText(/go to screenshot \d+/i);
+      act(() => { fireEvent.click(indicators[1]); }); // Clicking indicator stops auto-play
+      act(() => { vi.advanceTimersByTime(1200); });
+
+      // Advance past auto-play interval — should NOT auto-advance since stopped
+      act(() => { vi.advanceTimersByTime(7000); });
+
+      const img = screen.getByAltText(/search open library/i);
+      expect(img.src).toContain('online-search.jpg');
     });
 
-    it.skip('should wrap to first slide from last slide', async () => {
-      // Carousel wrapping involves state transitions
+    it('should wrap to first slide from last slide', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const indicators = screen.getAllByLabelText(/go to screenshot \d+/i);
+      act(() => { fireEvent.click(indicators[7]); }); // Go to last slide
+      act(() => { vi.advanceTimersByTime(1200); });
+
+      act(() => { fireEvent.click(screen.getByLabelText('Next screenshot')); });
+      act(() => { vi.advanceTimersByTime(400); });
+
+      const img = screen.getByAltText(/keep track of books and movies/i);
+      expect(img.src).toContain('main-panel.jpg');
     });
   });
 
@@ -262,28 +314,66 @@ describe('LandingPage', () => {
       expect(screen.queryByTestId('load-progress')).not.toBeInTheDocument();
     });
 
-    // TODO: Carousel timing tests are complex - skip for now
-    it.skip('should handle clicking same slide indicator', async () => {
-      // Complex carousel state management
+    it('should handle clicking same slide indicator (no-op)', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const indicators = screen.getAllByLabelText(/go to screenshot \d+/i);
+      act(() => { fireEvent.click(indicators[0]); }); // Click slide 0 while on slide 0
+      act(() => { vi.advanceTimersByTime(400); });
+
+      // Still on slide 0 — goToSlide guards against same-slide clicks
+      const img = screen.getByAltText(/keep track of books and movies/i);
+      expect(img.src).toContain('main-panel.jpg');
     });
 
-    it.skip('should handle rapid carousel navigation', async () => {
-      // Complex timing with multiple state transitions
+    it('should handle rapid carousel navigation', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const nextBtn = screen.getByLabelText('Next screenshot');
+      act(() => { fireEvent.click(nextBtn); });
+      act(() => { fireEvent.click(nextBtn); });
+      act(() => { vi.advanceTimersByTime(700); });
+
+      // Should have advanced (at least one transition completed)
+      const imgs = screen.getAllByRole('img');
+      expect(imgs.length).toBeGreaterThan(0);
     });
 
-    it.skip('should cleanup carousel interval on unmount', () => {
-      // Timer cleanup is hard to verify with fake timers
+    it('should cleanup carousel interval on unmount', () => {
+      const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
+      const { unmount } = render(<LandingPage {...defaultProps} />);
+      unmount();
+      expect(clearIntervalSpy).toHaveBeenCalled();
     });
   });
 
   describe('Carousel Mouse Interaction', () => {
-    // TODO: Mouse enter/leave with auto-play timing is complex - skip for now
-    it.skip('should pause auto-play on mouse enter', async () => {
-      // Complex state + timer interaction
+    it('should pause auto-play on mouse enter', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const carouselSection = screen.getByAltText(/keep track of books and movies/i).closest('div[class]');
+      act(() => { fireEvent.mouseEnter(carouselSection); });
+
+      act(() => { vi.advanceTimersByTime(7000); });
+
+      // Still on slide 0 — auto-play paused
+      const img = screen.getByAltText(/keep track of books and movies/i);
+      expect(img.src).toContain('main-panel.jpg');
     });
 
-    it.skip('should resume auto-play on mouse leave', async () => {
-      // Complex state + timer interaction
+    it('should resume auto-play on mouse leave', () => {
+      render(<LandingPage {...defaultProps} />);
+
+      const carouselSection = screen.getByAltText(/keep track of books and movies/i).closest('div[class]');
+      act(() => { fireEvent.mouseEnter(carouselSection); });
+      act(() => { vi.advanceTimersByTime(7000); });
+
+      act(() => { fireEvent.mouseLeave(carouselSection); });
+      act(() => { vi.advanceTimersByTime(7000); });
+
+      // Should have advanced after mouse leave resumed auto-play
+      const img = screen.getByAltText(/search open library/i);
+      expect(img.src).toContain('online-search.jpg');
     });
   });
 

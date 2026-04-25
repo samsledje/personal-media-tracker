@@ -329,7 +329,7 @@ export const processZipImport = async (zipFile, existingItems, saveItem, onProgr
  * @returns {Promise<{added:number, format:string}>} Number of items imported and detected format
  */
 export const processCSVImport = async (file, existingItems, saveItem, onProgress, zipCurrentItems = null, signal = null, onAPIError = null) => {
-  if (!file) return 0;
+  if (!file) return { added: 0, format: undefined };
 
   // Check if import was aborted before starting
   if (signal && signal.aborted) {

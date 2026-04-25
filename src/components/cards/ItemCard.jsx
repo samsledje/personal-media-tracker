@@ -1,50 +1,8 @@
 import React, { memo, useCallback } from 'react';
 import { Book, Film, Star } from 'lucide-react';
 import { hexToRgba } from '../../utils/colorUtils.js';
-import { STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from '../../constants/index.js';
-import { Bookmark, BookOpen, CheckCircle, PlayCircle, Layers, XCircle } from 'lucide-react';
-
-/**
- * Get the icon component for a given status
- */
-const getStatusIcon = (status, className = '') => {
-  const iconType = STATUS_ICONS[status];
-  switch (iconType) {
-    case 'bookmark':
-      return <Bookmark className={className} />;
-    case 'layers':
-      return <Layers className={className} />;
-    case 'book-open':
-      return <BookOpen className={className} />;
-    case 'check-circle':
-      return <CheckCircle className={className} />;
-    case 'play-circle':
-      return <PlayCircle className={className} />;
-    case 'x-circle':
-      return <XCircle className={className} />;
-    default:
-      return <Bookmark className={className} />;
-  }
-};
-
-/**
- * Get color class for status badge
- */
-const getStatusColorClass = (status) => {
-  const colorType = STATUS_COLORS[status];
-  switch (colorType) {
-    case 'blue':
-      return 'bg-blue-500';
-    case 'yellow':
-      return 'bg-yellow-500';
-    case 'green':
-      return 'bg-green-500';
-    case 'red':
-      return 'bg-red-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
+import { STATUS_LABELS } from '../../constants/index.js';
+import { getStatusIcon, getStatusColorClass } from '../../utils/statusUtils.jsx';
 
 /**
  * Memoized ItemCard component to prevent unnecessary re-renders

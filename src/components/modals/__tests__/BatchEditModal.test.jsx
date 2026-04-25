@@ -325,21 +325,19 @@ describe('BatchEditModal', () => {
       expect(defaultProps.onApply).toHaveBeenCalledWith({ type: 'movie' });
     });
 
-    // TODO: Debug why text input + checkbox tests fail
-    it.skip('should call onApply with author change', async () => {
+    it('should call onApply with author change', async () => {
       const user = userEvent.setup();
       render(<BatchEditModal {...defaultProps} />);
-      
+
       const checkboxes = screen.getAllByRole('checkbox');
       await user.click(checkboxes[1]); // Enable author
-      
+
       const authorInput = screen.getByPlaceholderText('Author');
-      await user.click(authorInput);
-      await user.paste('Updated Author');
-      
+      await user.type(authorInput, 'Updated Author');
+
       const applyButton = screen.getByRole('button', { name: /apply/i });
       await user.click(applyButton);
-      
+
       expect(defaultProps.onApply).toHaveBeenCalledWith({ author: 'Updated Author' });
     });
 
@@ -359,28 +357,27 @@ describe('BatchEditModal', () => {
       expect(defaultProps.onApply).toHaveBeenCalledWith({ rating: 5 });
     });
 
-    // TODO: Debug text input tests - skipping for now
-    it.skip('should call onApply with multiple changes', async () => {
+    it('should call onApply with multiple changes', async () => {
       const user = userEvent.setup();
       render(<BatchEditModal {...defaultProps} />);
-      
+
       const checkboxes = screen.getAllByRole('checkbox');
       await user.click(checkboxes[0]); // Enable type
       await user.click(checkboxes[4]); // Enable rating
       await user.click(checkboxes[5]); // Enable status
-      
+
       const typeSelect = screen.getByRole('combobox', { name: /type/i });
       await user.selectOptions(typeSelect, 'movie');
-      
+
       const ratingSelect = screen.getByRole('combobox', { name: /rating/i });
       await user.selectOptions(ratingSelect, '4');
-      
+
       const statusSelect = screen.getByRole('combobox', { name: /status/i });
       await user.selectOptions(statusSelect, 'watched');
-      
+
       const applyButton = screen.getByRole('button', { name: /apply/i });
       await user.click(applyButton);
-      
+
       expect(defaultProps.onApply).toHaveBeenCalledWith({
         type: 'movie',
         rating: 4,
@@ -388,16 +385,55 @@ describe('BatchEditModal', () => {
       });
     });
 
-    it.skip('should call onApply with add tags', async () => {
-      // TODO: Debug text input + checkbox interaction
+    it('should call onApply with add tags', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[6]); // Enable add tags
+
+      const tagInputs = screen.getAllByPlaceholderText('tag1, tag2');
+      await user.type(tagInputs[0], 'new-tag, another-tag');
+
+      await user.click(screen.getByRole('button', { name: /apply/i }));
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({
+        addTags: ['new-tag', 'another-tag'],
+      });
     });
 
-    it.skip('should call onApply with remove tags', async () => {
-      // TODO: Debug text input + checkbox interaction
+    it('should call onApply with remove tags', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[7]); // Enable remove tags
+
+      const tagInputs = screen.getAllByPlaceholderText('tag1, tag2');
+      await user.type(tagInputs[1], 'old-tag');
+
+      await user.click(screen.getByRole('button', { name: /apply/i }));
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({
+        removeTags: ['old-tag'],
+      });
     });
 
-    it.skip('should trim and filter empty tags', async () => {
-      // TODO: Debug text input + checkbox interaction
+    it('should trim and filter empty tags', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[6]); // Enable add tags
+
+      const tagInputs = screen.getAllByPlaceholderText('tag1, tag2');
+      await user.type(tagInputs[0], 'tag1,  , tag2,  ');
+
+      await user.click(screen.getByRole('button', { name: /apply/i }));
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({
+        addTags: ['tag1', 'tag2'],
+      });
     });
 
     it('should handle rating set to 0', async () => {
@@ -427,13 +463,31 @@ describe('BatchEditModal', () => {
       expect(screen.getByText(/Before: Author B • 2021 • 4★/)).toBeInTheDocument();
     });
 
-    // TODO: Debug preview tests with text inputs
-    it.skip('should update preview when fields are changed', async () => {
-      // Requires text input interaction debugging
+    it('should update preview when fields are changed', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[1]); // Enable author
+
+      const authorInput = screen.getByPlaceholderText('Author');
+      await user.type(authorInput, 'New Author');
+
+      // Preview should now show new author in "after" state
+      expect(screen.getAllByText(/New Author/).length).toBeGreaterThan(0);
     });
 
-    it.skip('should show "Will change" indicator for modified items', async () => {
-      // Requires text input interaction debugging
+    it('should show "Will change" indicator for modified items', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[1]); // Enable author
+
+      const authorInput = screen.getByPlaceholderText('Author');
+      await user.type(authorInput, 'Changed Author');
+
+      expect(screen.getAllByText('Will change').length).toBeGreaterThan(0);
     });
 
     it('should handle items with missing fields in preview', () => {
@@ -493,13 +547,34 @@ describe('BatchEditModal', () => {
       expect(defaultProps.onClose).toHaveBeenCalled();
     });
 
-    // TODO: Debug keyboard shortcut tests with text inputs
-    it.skip('should apply changes on Ctrl+Enter', async () => {
-      // Requires text input interaction debugging
+    it('should apply changes on Ctrl+Enter', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[0]); // Enable type
+
+      const typeSelect = screen.getByRole('combobox', { name: /type/i });
+      await user.selectOptions(typeSelect, 'movie');
+
+      await user.keyboard('{Control>}{Enter}{/Control}');
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({ type: 'movie' });
     });
 
-    it.skip('should apply changes on Meta+Enter (Mac)', async () => {
-      // Requires text input interaction debugging
+    it('should apply changes on Meta+Enter (Mac)', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[0]); // Enable type
+
+      const typeSelect = screen.getByRole('combobox', { name: /type/i });
+      await user.selectOptions(typeSelect, 'movie');
+
+      await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({ type: 'movie' });
     });
 
     it('should not apply when no fields selected via keyboard', async () => {
@@ -575,9 +650,21 @@ describe('BatchEditModal', () => {
       expect(defaultProps.onApply).toHaveBeenCalledWith({ year: '' });
     });
 
-    // TODO: Debug text input tests
-    it.skip('should handle tags with special characters', async () => {
-      // Requires text input interaction debugging
+    it('should handle tags with special characters', async () => {
+      const user = userEvent.setup();
+      render(<BatchEditModal {...defaultProps} />);
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      await user.click(checkboxes[6]); // Enable add tags
+
+      const tagInputs = screen.getAllByPlaceholderText('tag1, tag2');
+      await user.type(tagInputs[0], 'sci-fi, c++, .net');
+
+      await user.click(screen.getByRole('button', { name: /apply/i }));
+
+      expect(defaultProps.onApply).toHaveBeenCalledWith({
+        addTags: ['sci-fi', 'c++', '.net'],
+      });
     });
 
     it('should handle no changes in preview (identical before/after)', async () => {

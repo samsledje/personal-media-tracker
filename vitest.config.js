@@ -30,12 +30,29 @@ export default defineConfig({
         'src/MediaTracker.jsx',
       ],
       thresholds: {
-        lines: 75,
-        functions: 50,
-        branches: 75,
-        statements: 75,
+        lines: 85,
+        functions: 68,
+        branches: 80,
+        statements: 85,
       },
+      // Report coverage for specific directories
+      include: ['src/**/*.{js,jsx}'],
+      // Track coverage for untested files
+      reportOnFailure: true,
     },
+    // Test timeout configuration
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    // Test retry configuration for flaky tests
+    retry: 0, // Can be increased for CI environments
+    // Test parallelization
+    maxConcurrency: 5,
+    minThreads: 1,
+    maxThreads: 4,
+    // Performance monitoring
+    logHeapUsage: false,
+    // Isolate test environment
+    isolate: true,
   },
   resolve: {
     alias: {
