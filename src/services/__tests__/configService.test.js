@@ -8,6 +8,7 @@ import {
   saveCardSize,
   loadHalfStarsEnabled,
   saveHalfStarsEnabled,
+  saveAllSettings,
 } from '../../services/configService.js';
 import { LOCAL_STORAGE_KEYS, DEFAULT_THEME, CARD_SIZES } from '../../constants/index.js';
 
@@ -21,16 +22,16 @@ describe('configService', () => {
 
   describe('loadOmdbApiKey', () => {
     it('should load API key from localStorage', () => {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY, 'test-api-key');
-      
+      localStorage.setItem('mediaTracker_config', JSON.stringify({ omdbApiKey: 'test-api-key' }));
+
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('test-api-key');
     });
 
     it('should return empty string if no API key stored', () => {
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('');
     });
 
@@ -38,9 +39,9 @@ describe('configService', () => {
       const spy = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
         throw new Error('Storage error');
       });
-      
+
       const result = loadOmdbApiKey();
-      
+
       expect(result).toBe('');
       spy.mockRestore();
     });
@@ -49,8 +50,9 @@ describe('configService', () => {
   describe('saveOmdbApiKey', () => {
     it('should save API key to localStorage', () => {
       saveOmdbApiKey('new-api-key');
-      
-      expect(localStorage.getItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY)).toBe('new-api-key');
+
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config'));
+      expect(stored.omdbApiKey).toBe('new-api-key');
     });
 
     it('should handle errors gracefully', () => {
@@ -232,6 +234,24 @@ describe('configService', () => {
       
       expect(() => saveHalfStarsEnabled(true)).not.toThrow();
       spy.mockRestore();
+    });
+  });
+
+  describe('saveAllSettings with tmdbApiKey', () => {
+    it('should save tmdbApiKey to config when provided', async () => {
+      await saveAllSettings(null, { tmdbApiKey: 'my-tmdb-key' });
+      // saveConfig writes to localStorage under 'mediaTracker_config'
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config') || '{}');
+      expect(stored.tmdbApiKey).toBe('my-tmdb-key');
+    });
+
+    it('should not modify tmdbApiKey when not provided in settings', async () => {
+      // Pre-set a tmdb key
+      localStorage.setItem('mediaTracker_config', JSON.stringify({ tmdbApiKey: 'existing-key' }));
+      await saveAllSettings(null, { omdbApiKey: 'new-omdb-key' });
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config') || '{}');
+      // tmdbApiKey should be untouched
+      expect(stored.tmdbApiKey).toBe('existing-key');
     });
   });
 });

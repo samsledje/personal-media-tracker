@@ -61,11 +61,14 @@ export const searchMovies = async (query, limit = 12) => {
     let bestResults = [];
     let usedFuzzy = false;
 
+    // Pass year param for title searches to narrow results at the API level
+    const yearParam = (parsedQuery.searchType === 'title' && parsedQuery.year) ? parsedQuery.year : null;
+
     // Try each search variation
     for (const variation of searchVariations) {
       try {
         console.debug(`[OMDb] Trying search variation: "${variation}"`);
-        const movies = await performMovieSearch(variation, limit * 2, apiKey);
+        const movies = await performMovieSearch(variation, limit * 2, apiKey, yearParam);
         
         if (movies.length > 0) {
           console.debug(`[OMDb] Found ${movies.length} results for "${variation}"`);
@@ -120,9 +123,12 @@ export const searchMovies = async (query, limit = 12) => {
       return uniqueMovies.slice(0, limit);
     }
 
-    // No results yet - try fuzzy alternatives
+    // No results yet - try fuzzy alternatives using the best available base term
     console.debug('[OMDb] No results for search variations, trying fuzzy alternatives');
-    const fuzzyAlternatives = generateFuzzyAlternatives(trimmedQuery, 3);
+    const fuzzyBase = (parsedQuery.director || parsedQuery.actor)
+      ? (parsedQuery.director || parsedQuery.actor)
+      : (parsedQuery.titleKeywords[0] || trimmedQuery);
+    const fuzzyAlternatives = generateFuzzyAlternatives(fuzzyBase, 3);
 
     for (const alternative of fuzzyAlternatives) {
       console.debug(`[OMDb] Trying fuzzy alternative: "${alternative}"`);
@@ -167,9 +173,10 @@ export const searchMovies = async (query, limit = 12) => {
  * @param {string} apiKey - OMDb API key
  * @returns {Promise<object[]>} Array of movie objects
  */
-const performMovieSearch = async (query, limit, apiKey) => {
+const performMovieSearch = async (query, limit, apiKey, year = null) => {
+  const yearParam = year ? `&y=${encodeURIComponent(year)}` : '';
   const response = await fetch(
-    `${OMDB_BASE_URL}/?s=${encodeURIComponent(query)}&apikey=${apiKey}`
+    `${OMDB_BASE_URL}/?s=${encodeURIComponent(query)}&apikey=${apiKey}${yearParam}`
   );
 
   // Check for HTTP errors

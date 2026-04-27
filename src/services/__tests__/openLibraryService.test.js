@@ -186,8 +186,36 @@ describe('openLibraryService', () => {
       });
       
       const results = await searchBooks('test');
-      
+
       expect(results[0].isbn).toBe('9780123456789'); // Should pick ISBN-13
+    });
+
+    it('should use author: field query for "author Name" searches', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          docs: [{ key: '/works/OL1W', title: '1984', author_name: ['George Orwell'], first_publish_year: 1949 }]
+        })
+      });
+
+      await searchBooks('author George Orwell');
+
+      const calledUrl = global.fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('author%3AGeorge%20Orwell');
+    });
+
+    it('should use author: field query for "Title by Author" searches', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          docs: [{ key: '/works/OL2W', title: '1984', author_name: ['George Orwell'], first_publish_year: 1949 }]
+        })
+      });
+
+      await searchBooks('1984 by George Orwell');
+
+      const calledUrl = global.fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('author%3AGeorge%20Orwell');
     });
   });
 });

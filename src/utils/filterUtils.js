@@ -176,8 +176,17 @@ export const sortItems = (items, sortBy, sortOrder) => {
         break;
     }
 
+    // Primary sort
     if (aVal < bVal) return sortOrder === SORT_ORDERS.ASC ? -1 : 1;
     if (aVal > bVal) return sortOrder === SORT_ORDERS.ASC ? 1 : -1;
+    
+    // Secondary sort: date consumed descending (most recent first)
+    const aDateConsumed = new Date(a.dateRead || a.dateWatched || 0);
+    const bDateConsumed = new Date(b.dateRead || b.dateWatched || 0);
+    
+    if (aDateConsumed > bDateConsumed) return -1;
+    if (aDateConsumed < bDateConsumed) return 1;
+    
     return 0;
   });
 };

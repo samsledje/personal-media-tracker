@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Book, Film } from 'lucide-react';
 import { searchBooks, OpenLibraryError } from '../../services/openLibraryService.js';
 import { searchMovies, isServiceAvailable, OMDBError } from '../../services/omdbService.js';
+import { searchMovies as searchMoviesTMDB, isServiceAvailable as isTmdbAvailable, TMDBError } from '../../services/tmdbService.js';
 import { KEYBOARD_SHORTCUTS } from '../../constants/index.js';
 import { toast } from '../../services/toastService.js';
 
@@ -46,22 +47,18 @@ const SearchModal = ({ onClose, onSelect }) => {
     setLoading(false);
   };
 
-  const handleSearchMovies = async (searchQuery) => {
+  const handleSearchMoviesOmdb = async (searchQuery) => {
     if (!isServiceAvailable()) {
       setShowApiKeyWarning(true);
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
-    setFocusedIndex(-1); // Reset focus when searching
     try {
       const movies = await searchMovies(searchQuery);
       setResults(movies);
       setShowApiKeyWarning(false);
     } catch (error) {
       console.error('Error searching movies:', error);
-
-      // Handle different OMDB error types
       if (error instanceof OMDBError) {
         switch (error.type) {
           case 'AUTH_FAILED':
@@ -85,6 +82,32 @@ const SearchModal = ({ onClose, onSelect }) => {
         toast(error.message || 'Failed to search movies', { type: 'error' });
       }
     }
+  };
+
+  const handleSearchMovies = async (searchQuery) => {
+    setLoading(true);
+    setFocusedIndex(-1);
+
+    if (isTmdbAvailable()) {
+      try {
+        const movies = await searchMoviesTMDB(searchQuery);
+        setResults(movies);
+        setShowApiKeyWarning(false);
+        setLoading(false);
+        return;
+      } catch (error) {
+        if (error instanceof TMDBError && error.type === 'AUTH_FAILED') {
+          toast('TMDB API key is invalid. Falling back to OMDb search.', { type: 'warning' });
+          // fall through to OMDb
+        } else {
+          toast(error.message || 'Failed to search movies', { type: 'error' });
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    await handleSearchMoviesOmdb(searchQuery);
     setLoading(false);
   };
 
@@ -262,8 +285,10 @@ const SearchModal = ({ onClose, onSelect }) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={searchType === 'movie' 
-                  ? 'Try: "Inception", "director Nolan", "actor Tom Hanks"'
+                placeholder={searchType === 'movie'
+                  ? (isTmdbAvailable()
+                      ? 'Try: "Inception", "Christopher Nolan", "Tom Hanks"'
+                      : 'Try: "Inception", "director Nolan", "actor Tom Hanks"')
                   : 'Try: "Harry Potter", "author Rowling"'
                 }
                 className="w-full pl-4 pr-10 py-3 sm:py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-500 text-base"
@@ -311,6 +336,14 @@ const SearchModal = ({ onClose, onSelect }) => {
             </div>
           ) : results.length > 0 ? (
             <>
+              {results.some(result => result._personMatch) && (
+                <div className="mb-4 p-3 bg-slate-700/50 border border-slate-600 rounded-lg">
+                  <p className="text-sm text-slate-200">
+                    Showing movies from <strong>{results.find(r => r._personMatch)._personMatch}</strong>
+                    {results.find(r => r._matchedAs) && ` (${results.find(r => r._matchedAs)._matchedAs})`}
+                  </p>
+                </div>
+              )}
               {results.some(result => result._fuzzySearch) && (
                 <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                   <p className="text-sm text-blue-200">

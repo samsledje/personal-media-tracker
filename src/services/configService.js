@@ -1,6 +1,10 @@
 // Configuration service for managing app settings
 
 import { LOCAL_STORAGE_KEYS, DEFAULT_THEME } from '../constants/index.js';
+import { loadConfigFromFile, saveConfigToFile, mergeConfigs } from './configFileService.js';
+import { saveConfig } from '../config.js';
+
+const MEDIA_TRACKER_CONFIG_KEY = 'mediaTracker_config';
 
 /**
  * Load OMDb API key from localStorage
@@ -8,7 +12,8 @@ import { LOCAL_STORAGE_KEYS, DEFAULT_THEME } from '../constants/index.js';
  */
 export const loadOmdbApiKey = () => {
   try {
-    return localStorage.getItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY) || '';
+    const stored = localStorage.getItem(MEDIA_TRACKER_CONFIG_KEY);
+    return (stored ? JSON.parse(stored) : {}).omdbApiKey || '';
   } catch (error) {
     console.warn('Error loading OMDb API key:', error);
     return '';
@@ -20,11 +25,7 @@ export const loadOmdbApiKey = () => {
  * @param {string} apiKey - API key to save
  */
 export const saveOmdbApiKey = (apiKey) => {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEYS.OMDB_API_KEY, apiKey);
-  } catch (error) {
-    console.warn('Error saving OMDb API key:', error);
-  }
+  saveConfig({ omdbApiKey: apiKey });
 };
 
 /**
@@ -108,3 +109,77 @@ export const saveHalfStarsEnabled = (enabled) => {
     console.warn('Error saving half stars setting:', error);
   }
 };
+
+// File-based configuration functions with localStorage fallback
+
+/**
+ * Load all settings, prioritizing file-based config over localStorage
+ * @param {StorageAdapter} storage - Storage adapter instance
+ * @returns {Promise<object>} All configuration settings
+ */
+export const loadAllSettings = async (storage) => {
+  // Load from localStorage as fallback
+  const localStorageConfig = {
+    themePrimary: loadThemeColors().primary,
+    themeHighlight: loadThemeColors().highlight,
+    cardSize: loadCardSize(),
+    halfStarsEnabled: loadHalfStarsEnabled(),
+    omdbApiKey: loadOmdbApiKey()
+  };
+
+  // If storage is not connected, return localStorage values
+  if (!storage || !storage.isConnected()) {
+    return localStorageConfig;
+  }
+
+  try {
+    // Load from file
+    const fileConfig = await loadConfigFromFile(storage);
+    
+    // Merge configs (file takes priority)
+    return mergeConfigs(localStorageConfig, fileConfig);
+  } catch (error) {
+    console.warn('Error loading settings from file, using localStorage:', error);
+    return localStorageConfig;
+  }
+};
+
+/**
+ * Save all settings to both localStorage and file
+ * @param {StorageAdapter} storage - Storage adapter instance
+ * @param {object} settings - Settings object
+ * @returns {Promise<void>}
+ */
+export const saveAllSettings = async (storage, settings) => {
+  // Always save to localStorage as fallback
+  // For theme colors, we need both values to call saveThemeColors
+  // So we load existing colors if only one is provided
+  if (settings.themePrimary !== undefined || settings.themeHighlight !== undefined) {
+    const currentColors = loadThemeColors();
+    const primary = settings.themePrimary !== undefined ? settings.themePrimary : currentColors.primary;
+    const highlight = settings.themeHighlight !== undefined ? settings.themeHighlight : currentColors.highlight;
+    saveThemeColors(primary, highlight);
+  }
+  if (settings.cardSize !== undefined) {
+    saveCardSize(settings.cardSize);
+  }
+  if (settings.halfStarsEnabled !== undefined) {
+    saveHalfStarsEnabled(settings.halfStarsEnabled);
+  }
+  if (settings.omdbApiKey !== undefined) {
+    saveOmdbApiKey(settings.omdbApiKey);
+  }
+  if (settings.tmdbApiKey !== undefined) {
+    saveConfig({ tmdbApiKey: settings.tmdbApiKey });
+  }
+
+  // Also save to file if storage is connected
+  if (storage && storage.isConnected()) {
+    try {
+      await saveConfigToFile(storage, settings);
+    } catch (error) {
+      console.warn('Error saving settings to file:', error);
+    }
+  }
+};
+

@@ -1,6 +1,7 @@
 // Default configuration - will be overridden by user settings in localStorage
 const defaultConfig = {
   omdbApiKey: '', // Empty by default, will be set by user
+  tmdbApiKey: '', // Optional - enables director/actor search via TMDB
   googleDriveFolderName: 'MarkdownMediaTracker' // Default Google Drive folder name
 };
 
@@ -35,9 +36,14 @@ export const getConfig = (key) => {
   return config[key];
 };
 
-// Check if API key is configured
+// Check if OMDb API key is configured
 export const hasApiKey = () => {
   return Boolean(config.omdbApiKey);
+};
+
+// Check if TMDB API key is configured
+export const hasTmdbApiKey = () => {
+  return Boolean(config.tmdbApiKey);
 };
 
 // Initialize config by merging defaults with stored values

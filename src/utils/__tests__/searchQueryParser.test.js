@@ -342,4 +342,54 @@ describe('searchQueryParser', () => {
       expect(result.length).toBeLessThan(movies.length);
     });
   });
+
+  describe('author search parsing', () => {
+    it('should parse "author Name" query', () => {
+      const result = parseSearchQuery('author J.K. Rowling');
+      expect(result.searchType).toBe('author');
+      expect(result.author).toBe('J.K. Rowling');
+      expect(result.titleKeywords).toEqual([]);
+    });
+
+    it('should parse "Title author Name" query', () => {
+      const result = parseSearchQuery('Harry Potter author Rowling');
+      expect(result.searchType).toBe('author');
+      expect(result.author).toBe('Rowling');
+      expect(result.titleKeywords).toEqual(['Harry Potter']);
+    });
+
+    it('should parse "written by Name" query', () => {
+      const result = parseSearchQuery('written by George Orwell');
+      expect(result.searchType).toBe('author');
+      expect(result.author).toBe('George Orwell');
+    });
+
+    it('should include author field as null for non-author queries', () => {
+      const result = parseSearchQuery('Inception');
+      expect(result.author).toBeNull();
+    });
+  });
+
+  describe('generateSearchVariations for director/actor-only (no title)', () => {
+    it('should return just the person name for director-only query', () => {
+      const parsed = parseSearchQuery('director Christopher Nolan');
+      const variations = generateSearchVariations(parsed);
+      expect(variations).toEqual(['Christopher Nolan']);
+      expect(variations).not.toContain('director Christopher Nolan');
+    });
+
+    it('should return just the person name for actor-only query', () => {
+      const parsed = parseSearchQuery('actor Tom Hanks');
+      const variations = generateSearchVariations(parsed);
+      expect(variations).toEqual(['Tom Hanks']);
+      expect(variations).not.toContain('actor Tom Hanks');
+    });
+
+    it('should still include original + title for director+title query', () => {
+      const parsed = parseSearchQuery('Inception by Christopher Nolan');
+      const variations = generateSearchVariations(parsed);
+      expect(variations).toContain('Inception by Christopher Nolan');
+      expect(variations).toContain('Inception');
+    });
+  });
 });

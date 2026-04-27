@@ -27,6 +27,14 @@ const ACTOR_KEYWORDS = [
 ];
 
 /**
+ * Keywords that indicate author search (books)
+ */
+const AUTHOR_KEYWORDS = [
+  'written by',
+  'author'
+];
+
+/**
  * Keywords that indicate series/franchise search
  */
 const SERIES_KEYWORDS = [
@@ -56,6 +64,15 @@ ACTOR_KEYWORDS.forEach(keyword => {
 });
 
 /**
+ * Pre-compiled regex patterns for author keywords
+ * Maps keyword to regex pattern
+ */
+const AUTHOR_PATTERNS = {};
+AUTHOR_KEYWORDS.forEach(keyword => {
+  AUTHOR_PATTERNS[keyword] = new RegExp(`(.+?)\\s+${keyword}\\s+(.+?)(?:\\s+\\d{4})?$`, 'i');
+});
+
+/**
  * Parse a search query to detect search intent and extract metadata
  * @param {string} query - The search query
  * @returns {object} Parsed query information
@@ -67,6 +84,7 @@ export const parseSearchQuery = (query) => {
       titleKeywords: [],
       director: null,
       actor: null,
+      author: null,
       year: null,
       yearRange: null,
       isSeries: false,
@@ -80,6 +98,7 @@ export const parseSearchQuery = (query) => {
     titleKeywords: [],
     director: null,
     actor: null,
+    author: null,
     year: null,
     yearRange: null,
     isSeries: false,
@@ -102,47 +121,75 @@ export const parseSearchQuery = (query) => {
     result.year = null; // Clear single year if range is found
   }
 
-  // Check for director search
-  for (const keyword of DIRECTOR_KEYWORDS) {
-    const directorPattern = DIRECTOR_PATTERNS[keyword];
-    const match = query.match(directorPattern);
+  // Check for author search FIRST — must run before director detection
+  // because DIRECTOR_KEYWORDS contains "by", which would match "written by Name"
+  for (const keyword of AUTHOR_KEYWORDS) {
+    const authorPattern = AUTHOR_PATTERNS[keyword];
+    const match = query.match(authorPattern);
     if (match) {
-      // Check which group has the director name
-      if (keyword === 'by' || keyword === 'from') {
-        // "Title by Director" or "by Director"
-        const beforeKeyword = match[1].trim();
-        const afterKeyword = match[2].trim();
-        
-        if (beforeKeyword && afterKeyword.length > 2) {
-          result.director = afterKeyword.replace(/\s+\d{4}$/, '').trim();
-          result.titleKeywords = beforeKeyword ? [beforeKeyword] : [];
-          result.searchType = 'director';
-        }
-      } else {
-        // "directed by Director" or "director Name"
-        const afterKeyword = match[2].trim();
-        if (afterKeyword.length > 2) {
-          result.director = afterKeyword.replace(/\s+\d{4}$/, '').trim();
-          result.titleKeywords = match[1].trim() ? [match[1].trim()] : [];
-          result.searchType = 'director';
-        }
+      const afterKeyword = match[2].trim();
+      if (afterKeyword.length > 2) {
+        result.author = afterKeyword.replace(/\s+\d{4}$/, '').trim();
+        result.titleKeywords = match[1].trim() ? [match[1].trim()] : [];
+        result.searchType = 'author';
       }
       break;
     }
-    
-    // Try simpler pattern: just "director Name"
+
+    // Try simpler pattern: just "author Name"
     if (lowerQuery.startsWith(keyword + ' ')) {
-      const directorName = query.substring(keyword.length).trim().replace(/\s+\d{4}$/, '');
-      if (directorName.length > 2) {
-        result.director = directorName;
-        result.searchType = 'director';
+      const authorName = query.substring(keyword.length).trim().replace(/\s+\d{4}$/, '');
+      if (authorName.length > 2) {
+        result.author = authorName;
+        result.searchType = 'author';
         break;
       }
     }
   }
 
-  // Check for actor search (only if not director search)
-  if (!result.director) {
+  // Check for director search (only if not author search)
+  if (!result.author) {
+    for (const keyword of DIRECTOR_KEYWORDS) {
+      const directorPattern = DIRECTOR_PATTERNS[keyword];
+      const match = query.match(directorPattern);
+      if (match) {
+        // Check which group has the director name
+        if (keyword === 'by' || keyword === 'from') {
+          // "Title by Director" or "by Director"
+          const beforeKeyword = match[1].trim();
+          const afterKeyword = match[2].trim();
+
+          if (beforeKeyword && afterKeyword.length > 2) {
+            result.director = afterKeyword.replace(/\s+\d{4}$/, '').trim();
+            result.titleKeywords = beforeKeyword ? [beforeKeyword] : [];
+            result.searchType = 'director';
+          }
+        } else {
+          // "directed by Director" or "director Name"
+          const afterKeyword = match[2].trim();
+          if (afterKeyword.length > 2) {
+            result.director = afterKeyword.replace(/\s+\d{4}$/, '').trim();
+            result.titleKeywords = match[1].trim() ? [match[1].trim()] : [];
+            result.searchType = 'director';
+          }
+        }
+        break;
+      }
+
+      // Try simpler pattern: just "director Name"
+      if (lowerQuery.startsWith(keyword + ' ')) {
+        const directorName = query.substring(keyword.length).trim().replace(/\s+\d{4}$/, '');
+        if (directorName.length > 2) {
+          result.director = directorName;
+          result.searchType = 'director';
+          break;
+        }
+      }
+    }
+  }
+
+  // Check for actor search (only if not director or author search)
+  if (!result.director && !result.author) {
     for (const keyword of ACTOR_KEYWORDS) {
       const actorPattern = ACTOR_PATTERNS[keyword];
       const match = query.match(actorPattern);
@@ -151,7 +198,7 @@ export const parseSearchQuery = (query) => {
           // "Title with Actor"
           const beforeKeyword = match[1].trim();
           const afterKeyword = match[2].trim();
-          
+
           if (beforeKeyword && afterKeyword.length > 2) {
             result.actor = afterKeyword.replace(/\s+\d{4}$/, '').trim();
             result.titleKeywords = [beforeKeyword];
@@ -168,7 +215,7 @@ export const parseSearchQuery = (query) => {
         }
         break;
       }
-      
+
       // Try simpler pattern: just "actor Name"
       if (lowerQuery.startsWith(keyword + ' ')) {
         const actorName = query.substring(keyword.length).trim().replace(/\s+\d{4}$/, '');
@@ -181,8 +228,8 @@ export const parseSearchQuery = (query) => {
     }
   }
 
-  // If no director or actor, treat as title search
-  if (!result.director && !result.actor) {
+  // If no director, actor, or author, treat as title search
+  if (!result.director && !result.actor && !result.author) {
     // Remove year and series keywords to get cleaner title
     let cleanQuery = query;
     if (result.year) {
@@ -212,18 +259,27 @@ export const parseSearchQuery = (query) => {
  */
 export const generateSearchVariations = (parsedQuery) => {
   const variations = [];
-  
+
   if (!parsedQuery) {
     return variations;
   }
 
-  // Always include original query
+  const personName = parsedQuery.director || parsedQuery.actor;
+
+  // For director/actor-only searches (no title), use the person's name directly.
+  // Do NOT send "director Nolan" as a title query — OMDb would find nothing.
+  if (personName && parsedQuery.titleKeywords.length === 0) {
+    variations.push(personName);
+    return variations;
+  }
+
+  // Always include original query for non-person-only searches
   if (parsedQuery.original) {
     variations.push(parsedQuery.original);
   }
 
-  // For director/actor searches, try just the title keywords if available
-  if ((parsedQuery.director || parsedQuery.actor) && parsedQuery.titleKeywords.length > 0) {
+  // For director/actor searches with a title, also try just the title keywords
+  if (personName && parsedQuery.titleKeywords.length > 0) {
     parsedQuery.titleKeywords.forEach(keyword => {
       if (keyword && !variations.includes(keyword)) {
         variations.push(keyword);

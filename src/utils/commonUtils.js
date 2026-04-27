@@ -136,3 +136,60 @@ export const sanitizeDisplayString = (val) => {
 export const isMobileScreen = () => {
   return window.innerWidth < 640;
 };
+
+// Status constants for completed states
+const STATUS_READ = 'read';
+const STATUS_WATCHED = 'watched';
+
+/**
+ * Get today's date in YYYY-MM-DD format (local timezone).
+ * Note: Uses local date to ensure the date matches the user's timezone,
+ * not UTC. This ensures consistency with user expectations.
+ * 
+ * @returns {string} Today's date in YYYY-MM-DD format
+ */
+export const getTodayDate = () => {
+  const today = new Date();
+  // Use local date components to avoid timezone issues
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Auto-update date field when status changes to completed state.
+ * When a book is marked as 'read' or movie as 'watched', sets the date to today
+ * if it's not already set.
+ * 
+ * @param {object} item - The item being updated (must not be null/undefined)
+ * @param {string} newStatus - The new status being set
+ * @param {string} oldStatus - The old status (optional)
+ * @returns {object} Updated item with auto-updated date if applicable
+ * @throws {TypeError} If item is null or undefined
+ */
+export const autoUpdateDateOnStatusChange = (item, newStatus, oldStatus = null) => {
+  if (!item) {
+    throw new TypeError('item parameter is required and cannot be null or undefined');
+  }
+  
+  const updatedItem = { ...item, status: newStatus };
+  
+  // Only auto-update if status is changing to a completed state
+  const isCompletingBook = newStatus === STATUS_READ && oldStatus !== STATUS_READ;
+  const isCompletingMovie = newStatus === STATUS_WATCHED && oldStatus !== STATUS_WATCHED;
+  
+  if (isCompletingBook) {
+    // Set dateRead to today if not already set
+    if (!updatedItem.dateRead) {
+      updatedItem.dateRead = getTodayDate();
+    }
+  } else if (isCompletingMovie) {
+    // Set dateWatched to today if not already set
+    if (!updatedItem.dateWatched) {
+      updatedItem.dateWatched = getTodayDate();
+    }
+  }
+  
+  return updatedItem;
+};
