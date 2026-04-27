@@ -90,6 +90,15 @@ const fetchPersonMovies = async (personId, department) => {
   return (data.cast || []).sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 };
 
+// Extract a trailing 4-digit year from a query string, return { cleanQuery, year }
+const extractYear = (query) => {
+  const match = query.trim().match(/^(.*?)\s*\b((?:19|20)\d{2})\b\s*$/);
+  if (match) {
+    return { cleanQuery: match[1].trim(), year: match[2] };
+  }
+  return { cleanQuery: query.trim(), year: null };
+};
+
 /**
  * Search for movies using TMDB's /search/multi endpoint.
  * Returns movie results merged with person filmography when a person is matched.
@@ -99,8 +108,10 @@ export const searchMovies = async (query, limit = 12) => {
     throw new Error('Query cannot be empty');
   }
 
+  const { cleanQuery, year } = extractYear(query);
+
   const data = await fetch(
-    buildUrl('/search/multi', { query: query.trim(), page: 1 })
+    buildUrl('/search/multi', { query: cleanQuery, page: 1 })
   ).then(handleResponse);
 
   const results = data.results || [];
@@ -124,7 +135,7 @@ export const searchMovies = async (query, limit = 12) => {
     let personMovies;
     try {
       const fullCredits = await fetchPersonMovies(topPerson.id, department);
-      personMovies = fullCredits.slice(0, limit).map(mapMovieResult);
+      personMovies = fullCredits.slice(0, year ? undefined : limit).map(mapMovieResult);
     } catch {
       // Fall back to known_for if credits call fails
       personMovies = (topPerson.known_for || [])
@@ -132,7 +143,12 @@ export const searchMovies = async (query, limit = 12) => {
         .map(mapMovieResult);
     }
 
-    for (const m of personMovies) {
+    // If a year was specified, filter to that year
+    if (year) {
+      personMovies = personMovies.filter((m) => m.year === year);
+    }
+
+    for (const m of personMovies.slice(0, limit)) {
       if (!seenIds.has(m.tmdbID)) {
         seenIds.add(m.tmdbID);
         mergedMovies.push({ ...m, _personMatch: personName, _matchedAs: matchedAs });
@@ -140,8 +156,9 @@ export const searchMovies = async (query, limit = 12) => {
     }
   }
 
-  // Add remaining title-match movies
+  // Add remaining title-match movies, filtered by year if specified
   for (const m of movieResults) {
+    if (year && (!m.release_date || m.release_date.slice(0, 4) !== year)) continue;
     if (!seenIds.has(m.id)) {
       seenIds.add(m.id);
       mergedMovies.push(mapMovieResult(m));

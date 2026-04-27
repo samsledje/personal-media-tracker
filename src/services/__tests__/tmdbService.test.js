@@ -287,5 +287,51 @@ describe('tmdbService', () => {
       const results = await searchMovies('Inception');
       expect(results[0].coverUrl).toBeNull();
     });
+
+    it('should strip year from query and filter title results by year', async () => {
+      const matchingMovie = makeMovie(1, 'The Matrix', '1999');
+      const nonMatchingMovie = makeMovie(2, 'The Matrix Reloaded', '2003');
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ results: [matchingMovie, nonMatchingMovie] }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => makeCredits() });
+
+      const results = await searchMovies('The Matrix 1999');
+      expect(results).toHaveLength(1);
+      expect(results[0].year).toBe('1999');
+      // Verify the clean query (without year) was sent to TMDB
+      const calledUrl = fetchMock.mock.calls[0][0];
+      expect(calledUrl).toContain('query=The+Matrix');
+      expect(calledUrl).not.toContain('1999');
+    });
+
+    it('should filter person filmography by year', async () => {
+      const person = {
+        id: 31,
+        media_type: 'person',
+        name: 'Tom Hanks',
+        known_for_department: 'Acting',
+        popularity: 150,
+        known_for: [],
+      };
+      const actingCredits = {
+        crew: [],
+        cast: [
+          { ...makeMovie(30, 'Cast Away', '2000'), popularity: 100 },
+          { ...makeMovie(31, 'Forrest Gump', '1994'), popularity: 90 },
+        ],
+      };
+
+      fetchMock
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [person] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => actingCredits })
+        .mockResolvedValue({ ok: true, json: async () => makeCredits() });
+
+      const results = await searchMovies('Tom Hanks 2000');
+      expect(results).toHaveLength(1);
+      expect(results[0].year).toBe('2000');
+    });
   });
 });
