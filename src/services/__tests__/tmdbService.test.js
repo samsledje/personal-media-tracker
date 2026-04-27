@@ -131,8 +131,7 @@ describe('tmdbService', () => {
       expect(results[0].tmdbID).toBe(1);
     });
 
-    it('should merge person known_for movies first when a person is matched', async () => {
-      const knownForMovie = makeMovie(10, 'The Dark Knight', '2008');
+    it('should merge person full-credits movies first when a person is matched', async () => {
       const titleMovie = makeMovie(20, 'Dark City', '1998');
       const person = {
         id: 525,
@@ -140,7 +139,14 @@ describe('tmdbService', () => {
         name: 'Christopher Nolan',
         known_for_department: 'Directing',
         popularity: 200,
-        known_for: [{ ...knownForMovie, media_type: 'movie' }, { ...knownForMovie, media_type: 'movie' }, { ...knownForMovie, media_type: 'movie' }],
+        known_for: [],
+      };
+
+      // Full credits from /person/{id}/movie_credits
+      const personCreditsMovie = makeMovie(10, 'The Dark Knight', '2008');
+      const personMovieCredits = {
+        crew: [{ job: 'Director', ...personCreditsMovie, popularity: 90 }],
+        cast: [],
       };
 
       const multiResponse = { results: [person, titleMovie] };
@@ -148,9 +154,10 @@ describe('tmdbService', () => {
       const credits20 = makeCredits('Alex Proyas');
 
       fetchMock
-        .mockResolvedValueOnce({ ok: true, json: async () => multiResponse })
-        .mockResolvedValueOnce({ ok: true, json: async () => credits10 })  // credits for movie 10
-        .mockResolvedValueOnce({ ok: true, json: async () => credits20 }); // credits for movie 20
+        .mockResolvedValueOnce({ ok: true, json: async () => multiResponse })         // /search/multi
+        .mockResolvedValueOnce({ ok: true, json: async () => personMovieCredits })    // /person/525/movie_credits
+        .mockResolvedValueOnce({ ok: true, json: async () => credits10 })             // /movie/10/credits
+        .mockResolvedValueOnce({ ok: true, json: async () => credits20 });            // /movie/20/credits
 
       const results = await searchMovies('Christopher Nolan');
 
@@ -164,61 +171,64 @@ describe('tmdbService', () => {
       expect(results[1]._personMatch).toBeUndefined();
     });
 
-    it('should fetch full credits when known_for has fewer than 3 entries', async () => {
-      const knownForMovie = makeMovie(10, 'Inception', '2010');
+    it('should always fetch full filmography from /person/{id}/movie_credits', async () => {
       const person = {
         id: 525,
         media_type: 'person',
         name: 'Christopher Nolan',
         known_for_department: 'Directing',
         popularity: 200,
-        known_for: [{ ...knownForMovie, media_type: 'movie' }], // only 1 — sparse
+        known_for: [{ ...makeMovie(10, 'Inception', '2010'), media_type: 'movie' }],
       };
 
-      const fullCreditsMovie = makeMovie(11, 'The Dark Knight', '2008');
+      const fullCreditsMovie1 = makeMovie(11, 'The Dark Knight', '2008');
       const fullCreditsMovie2 = makeMovie(12, 'Interstellar', '2014');
-
-      const movieCredits = {
+      const personMovieCredits = {
         crew: [
-          { job: 'Director', title: 'The Dark Knight', ...fullCreditsMovie, popularity: 90 },
-          { job: 'Director', title: 'Interstellar', ...fullCreditsMovie2, popularity: 85 },
+          { job: 'Director', ...fullCreditsMovie1, popularity: 90 },
+          { job: 'Director', ...fullCreditsMovie2, popularity: 85 },
         ],
         cast: [],
       };
 
       fetchMock
-        // multi search
         .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [person] }) })
-        // full movie_credits for person
-        .mockResolvedValueOnce({ ok: true, json: async () => movieCredits })
-        // credits for each movie in result
+        .mockResolvedValueOnce({ ok: true, json: async () => personMovieCredits })
         .mockResolvedValue({ ok: true, json: async () => makeCredits('Christopher Nolan') });
 
       const results = await searchMovies('Christopher Nolan');
       expect(results.length).toBeGreaterThan(0);
       expect(results[0]._personMatch).toBe('Christopher Nolan');
+      // Should have the full credits movies, not just the 1 known_for entry
+      const tmdbIds = results.map((r) => r.tmdbID);
+      expect(tmdbIds).toContain(11);
+      expect(tmdbIds).toContain(12);
     });
 
     it('should set _matchedAs actor for person with Acting department', async () => {
-      const knownForMovie = { ...makeMovie(30, 'Cast Away', '2000'), media_type: 'movie' };
       const person = {
         id: 31,
         media_type: 'person',
         name: 'Tom Hanks',
         known_for_department: 'Acting',
         popularity: 150,
-        known_for: [knownForMovie, knownForMovie, knownForMovie],
+        known_for: [],
+      };
+      const actingCredits = {
+        crew: [],
+        cast: [{ ...makeMovie(30, 'Cast Away', '2000'), popularity: 100 }],
       };
 
       fetchMock
         .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [person] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => actingCredits })
         .mockResolvedValue({ ok: true, json: async () => makeCredits() });
 
       const results = await searchMovies('Tom Hanks');
       expect(results[0]._matchedAs).toBe('actor');
     });
 
-    it('should deduplicate movies appearing in both person known_for and title results', async () => {
+    it('should deduplicate movies appearing in both person credits and title results', async () => {
       const sharedMovie = makeMovie(42, 'Inception', '2010');
       const person = {
         id: 525,
@@ -226,7 +236,11 @@ describe('tmdbService', () => {
         name: 'Christopher Nolan',
         known_for_department: 'Directing',
         popularity: 200,
-        known_for: [{ ...sharedMovie, media_type: 'movie' }, { ...sharedMovie, media_type: 'movie' }, { ...sharedMovie, media_type: 'movie' }],
+        known_for: [],
+      };
+      const personMovieCredits = {
+        crew: [{ job: 'Director', ...sharedMovie, popularity: 90 }],
+        cast: [],
       };
 
       fetchMock
@@ -234,6 +248,7 @@ describe('tmdbService', () => {
           ok: true,
           json: async () => ({ results: [person, sharedMovie] }),
         })
+        .mockResolvedValueOnce({ ok: true, json: async () => personMovieCredits })
         .mockResolvedValue({ ok: true, json: async () => makeCredits() });
 
       const results = await searchMovies('Christopher Nolan');

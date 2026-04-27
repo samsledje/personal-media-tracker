@@ -287,9 +287,9 @@ const SearchModal = ({ onClose, onSelect }) => {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={searchType === 'movie'
                   ? (isTmdbAvailable()
-                      ? 'Try: "Inception", "Christopher Nolan", "Tom Hanks"'
-                      : 'Try: "Inception", "director Nolan", "actor Tom Hanks"')
-                  : 'Try: "Harry Potter", "author Rowling"'
+                      ? 'Try: "Inception", "Christopher Nolan", "Tom Hanks 2000"'
+                      : 'Try: "Inception", "The Matrix 1999"')
+                  : 'Try: "Harry Potter", "author Rowling", "1984 by Orwell"'
                 }
                 className="w-full pl-4 pr-10 py-3 sm:py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-500 text-base"
               />
@@ -319,10 +319,13 @@ const SearchModal = ({ onClose, onSelect }) => {
           {!hasSearched && (
             <div className="mt-3 p-3 bg-slate-700/30 border border-slate-600 rounded-lg">
               <p className="text-xs text-slate-400">
-                💡 <strong>Search tips:</strong> {searchType === 'movie' 
-                  ? 'Try "director [name]", "actor [name]", or "[title] [year]" for better results'
-                  : 'Try "author [name]" or "[title] [year]" for targeted searches'
-                }
+                {searchType === 'movie' ? (
+                  isTmdbAvailable()
+                    ? <>💡 <strong>Search tips:</strong> Search by title, person name (e.g. "Christopher Nolan"), or add a year to narrow results</>
+                    : <>💡 <strong>Search tips:</strong> Search by title or add a year (e.g. "The Matrix 1999"). Add a TMDB API key in Settings to enable searching by person name.</>
+                ) : (
+                  <>💡 <strong>Search tips:</strong> Try "author [name]" or "[title] by [author]" for targeted searches</>
+                )}
               </p>
             </div>
           )}

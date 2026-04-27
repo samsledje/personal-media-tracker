@@ -119,16 +119,17 @@ export const searchMovies = async (query, limit = 12) => {
     const department = topPerson.known_for_department || 'Acting';
     const matchedAs = department === 'Directing' ? 'director' : 'actor';
 
-    const knownFor = (topPerson.known_for || []).filter(
-      (m) => m.media_type === 'movie'
-    );
-
-    let personMovies = knownFor.map(mapMovieResult);
-
-    // If known_for is sparse, fetch full credits
-    if (knownFor.length < 3) {
+    // Always fetch full credits for person matches — known_for only has ~3 entries
+    // which is too sparse for a useful filmography view
+    let personMovies;
+    try {
       const fullCredits = await fetchPersonMovies(topPerson.id, department);
       personMovies = fullCredits.slice(0, limit).map(mapMovieResult);
+    } catch {
+      // Fall back to known_for if credits call fails
+      personMovies = (topPerson.known_for || [])
+        .filter((m) => m.media_type === 'movie')
+        .map(mapMovieResult);
     }
 
     for (const m of personMovies) {
