@@ -81,15 +81,21 @@ const ItemCard = memo(({
       <div className={`p-3 flex-1 flex flex-col ${cardSize === 'tiny' ? 'pb-12' : 'pb-14'}`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
-            <h3 className={`font-semibold leading-tight mb-1 ${
-              cardSize === 'tiny' ? 'text-xs' : cardSize === 'small' ? 'text-sm' : 'text-base'
-            }`}>
+            <h3
+              className={`font-semibold leading-tight mb-1 ${
+                cardSize === 'tiny' ? 'text-xs' : cardSize === 'small' ? 'text-sm' : 'text-base'
+              }`}
+              style={{ color: 'var(--mt-text-title, white)' }}
+            >
               <span className="line-clamp-2">{item.title}</span>
             </h3>
             {(item.author || item.director) && (
-              <p className={`text-slate-400 truncate ${
-                cardSize === 'tiny' ? 'text-xs' : 'text-sm'
-              }`}>
+              <p
+                className={`truncate ${
+                  cardSize === 'tiny' ? 'text-xs' : 'text-sm'
+                }`}
+                style={{ color: 'var(--mt-text-author, #94a3b8)' }}
+              >
                 {item.author || item.director}
               </p>
             )}
@@ -156,7 +162,10 @@ const ItemCard = memo(({
 
             {/* Year / Date */}
             {item.year && (
-              <div className={`text-slate-500 ${cardSize === 'tiny' ? 'text-xs' : 'text-sm'}`}>
+              <div
+                className={`${cardSize === 'tiny' ? 'text-xs' : 'text-sm'}`}
+                style={{ color: 'var(--mt-text-metadata, #64748b)' }}
+              >
                 {item.year}
               </div>
             )}

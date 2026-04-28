@@ -1036,7 +1036,7 @@ const MediaTracker = () => {
         >
           <div className="w-full max-w-7xl mx-auto px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+              <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--mt-text-title, white)' }}>
                 <img src="./logo_white.svg" alt="logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
                 <span className="hidden xs:inline">Markdown Media Tracker</span>
                 <span className="xs:hidden">MMT</span>
