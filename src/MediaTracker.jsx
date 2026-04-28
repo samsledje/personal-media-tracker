@@ -33,6 +33,7 @@ import { processImportFile } from './utils/importUtils.js';
 import { hasApiKey } from './config.js';
 import { toast } from './services/toastService.js';
 import { autoUpdateDateOnStatusChange } from './utils/commonUtils.js';
+import { fetchAllMissingCovers } from './utils/coverUtils.js';
 
 // Constants
 import { STATUS_LABELS } from './constants/index.js';
@@ -1565,6 +1566,8 @@ const MediaTracker = () => {
           setHalfStarsEnabled={setHalfStarsEnabled}
           storageAdapter={storageAdapter}
           onClearCache={handleClearCache}
+          items={items}
+          onFetchAllCovers={(onProgress) => fetchAllMissingCovers(items, saveItem, onProgress)}
           omdbApiKey={omdbApiKey}
           updateApiKey={updateApiKey}
           tmdbApiKey={tmdbApiKey}
