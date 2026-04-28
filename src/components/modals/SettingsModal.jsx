@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, ExternalLink, Save } from 'lucide-react';
+import { X, Settings, ExternalLink, Save, Image } from 'lucide-react';
 import { PRIMARY_COLOR_PRESETS, HIGHLIGHT_COLOR_PRESETS } from '../../constants/colors.js';
 
 const TABS = ['Appearance', 'General', 'API Keys'];
@@ -21,6 +21,8 @@ const SettingsModal = ({
   setHalfStarsEnabled,
   storageAdapter,
   onClearCache,
+  items,
+  onFetchAllCovers,
   // API Keys
   omdbApiKey,
   updateApiKey,
@@ -32,6 +34,7 @@ const SettingsModal = ({
   const [showApiKeySaved, setShowApiKeySaved] = useState(false);
   const [tmdbKeyInput, setTmdbKeyInput] = useState(tmdbApiKey || '');
   const [showTmdbKeySaved, setShowTmdbKeySaved] = useState(false);
+  const [coverFetchState, setCoverFetchState] = useState(null); // null | { done, total } | 'done-N'
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -59,6 +62,17 @@ const SettingsModal = ({
     setTimeout(() => setShowTmdbKeySaved(false), 2000);
   };
 
+  const handleFetchAllCovers = async () => {
+    setCoverFetchState({ done: 0, total: 0 });
+    const { succeeded } = await onFetchAllCovers(({ done, total }) => {
+      setCoverFetchState({ done, total });
+    });
+    setCoverFetchState(`done-${succeeded}`);
+    setTimeout(() => setCoverFetchState(null), 3000);
+  };
+
+  const missingCoverCount = (items || []).filter(item => !item.coverUrl).length;
+  const isFetchingCovers = coverFetchState !== null && typeof coverFetchState === 'object';
   const isGoogleDrive = storageAdapter?.getStorageType() === 'googledrive';
   const cardSizeIndex = CARD_SIZES.indexOf(cardSize);
 
@@ -202,6 +216,29 @@ const SettingsModal = ({
                   <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${halfStarsEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
               </div>
+
+              {onFetchAllCovers && (
+                <div className="flex items-center justify-between py-2 border-t border-slate-700">
+                  <div>
+                    <p className="text-sm font-medium">Fetch Missing Covers</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {missingCoverCount} item{missingCoverCount !== 1 ? 's' : ''} without cover art
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleFetchAllCovers}
+                    disabled={isFetchingCovers || missingCoverCount === 0}
+                    className="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shrink-0 inline-flex items-center gap-1.5"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    {isFetchingCovers
+                      ? `Fetching… ${coverFetchState.done} / ${coverFetchState.total}`
+                      : typeof coverFetchState === 'string'
+                        ? `Done (${coverFetchState.replace('done-', '')} updated)`
+                        : 'Fetch Covers'}
+                  </button>
+                </div>
+              )}
 
               {isGoogleDrive && (
                 <div className="flex items-center justify-between py-2 border-t border-slate-700">

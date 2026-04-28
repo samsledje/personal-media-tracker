@@ -1,6 +1,7 @@
 // Utility functions for fetching cover images from external APIs
 import { getMovieByTitleYear } from '../services/omdbService.js';
 import { getBookByISBN, searchBooks } from '../services/openLibraryService.js';
+import { searchMovies as searchTmdbMovies, isServiceAvailable as isTmdbAvailable } from '../services/tmdbService.js';
 
 /**
  * Attempt to fetch a cover URL for an item using available data
@@ -73,8 +74,8 @@ const fetchBookCover = async (book) => {
 
 /**
  * Fetch cover for a movie item
- * Uses title+year from OMDb
- * 
+ * Tries TMDB first (if available), then falls back to OMDb
+ *
  * @param {object} movie - Movie item
  * @returns {Promise<string|null>} Cover URL or null if not found
  */
@@ -83,15 +84,61 @@ const fetchMovieCover = async (movie) => {
     return null;
   }
 
+  if (isTmdbAvailable()) {
+    try {
+      const query = movie.year ? `${movie.title} ${movie.year}` : movie.title;
+      const results = await searchTmdbMovies(query, 1);
+      if (results && results.length > 0 && results[0].coverUrl) {
+        return results[0].coverUrl;
+      }
+    } catch (error) {
+      console.warn('Error fetching movie cover from TMDB:', error);
+    }
+  }
+
   try {
     const movieData = await getMovieByTitleYear(movie.title, movie.year || null);
-    
     if (movieData && movieData.coverUrl) {
       return movieData.coverUrl;
     }
   } catch (error) {
-    console.warn('Error fetching movie cover:', error);
+    console.warn('Error fetching movie cover from OMDb:', error);
   }
 
   return null;
+};
+
+/**
+ * Fetch covers for all items that are missing one.
+ * Processes sequentially to avoid rate-limiting free-tier APIs.
+ *
+ * @param {object[]} items - All items
+ * @param {function} saveItem - Async function to persist an updated item
+ * @param {function} [onProgress] - Optional callback({ done, total, current })
+ * @returns {Promise<{succeeded: number, failed: number}>}
+ */
+export const fetchAllMissingCovers = async (items, saveItem, onProgress) => {
+  const missing = items.filter(item => !item.coverUrl);
+  const total = missing.length;
+  let succeeded = 0;
+  let failed = 0;
+
+  for (let i = 0; i < missing.length; i++) {
+    const item = missing[i];
+    onProgress?.({ done: i, total, current: item });
+    try {
+      const coverUrl = await fetchCoverForItem(item);
+      if (coverUrl) {
+        await saveItem({ ...item, coverUrl });
+        succeeded++;
+      } else {
+        failed++;
+      }
+    } catch {
+      failed++;
+    }
+  }
+
+  onProgress?.({ done: total, total, current: null });
+  return { succeeded, failed };
 };
