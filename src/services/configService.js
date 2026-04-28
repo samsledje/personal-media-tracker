@@ -169,6 +169,9 @@ export const saveAllSettings = async (storage, settings) => {
   if (settings.omdbApiKey !== undefined) {
     saveOmdbApiKey(settings.omdbApiKey);
   }
+  if (settings.tmdbApiKey !== undefined) {
+    saveConfig({ tmdbApiKey: settings.tmdbApiKey });
+  }
 
   // Also save to file if storage is connected
   if (storage && storage.isConnected()) {

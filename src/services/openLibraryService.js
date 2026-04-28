@@ -3,6 +3,7 @@
 const OPEN_LIBRARY_BASE_URL = 'https://openlibrary.org';
 const COVERS_BASE_URL = 'https://covers.openlibrary.org';
 import { generateFuzzyAlternatives, shouldTryFuzzySearch } from '../utils/fuzzySearchUtils.js';
+import { parseSearchQuery } from '../utils/searchQueryParser.js';
 
 /**
  * Custom error class for Open Library API errors
@@ -17,11 +18,12 @@ export class OpenLibraryError extends Error {
 }
 
 /**
- * Search for books using Open Library API
+ * Search for books using Open Library API with enhanced query parsing
+ * Supports search by title, author, year, and series
  * Note: This function requests edition data to get ISBN information from the most relevant edition.
  * It prefers ISBN-13 over ISBN-10 when both are available.
  * Includes fuzzy search fallback for misspelled queries.
- * @param {string} query - Search query
+ * @param {string} query - Search query (e.g., "Harry Potter", "author J.K. Rowling", "1984 by Orwell")
  * @param {number} limit - Maximum number of results (default: 12)
  * @returns {Promise<object[]>} Array of book objects
  */
@@ -33,17 +35,50 @@ export const searchBooks = async (query, limit = 12) => {
   const trimmedQuery = query.trim();
 
   try {
-    // Try the original search first
-    const books = await performBookSearch(trimmedQuery, limit);
+    // Parse the query to understand search intent
+    const parsedQuery = parseSearchQuery(trimmedQuery);
+    console.debug('[OpenLibrary] Parsed query:', parsedQuery);
 
-    // If we got results or this was already a fuzzy attempt, return them
+    // Build optimized search query for Open Library API
+    // Open Library supports field-specific searches: title:, author:, etc.
+    let searchQuery = trimmedQuery;
+    
+    if (parsedQuery.searchType === 'author' && parsedQuery.author) {
+      searchQuery = `author:${parsedQuery.author}`;
+      console.debug(`[OpenLibrary] Searching by author: "${parsedQuery.author}"`);
+    } else if (parsedQuery.director) {
+      // "Title by Author" — the parser maps "by" to director; treat as author for books
+      searchQuery = `author:${parsedQuery.director}`;
+      console.debug(`[OpenLibrary] Searching by author (via 'by' keyword): "${parsedQuery.director}"`);
+    } else if (parsedQuery.titleKeywords.length > 0) {
+      // Use title keywords for more focused search
+      searchQuery = parsedQuery.titleKeywords[0];
+      if (parsedQuery.year) {
+        // Add year as additional search term (OpenLibrary doesn't have year: field)
+        searchQuery += ` ${parsedQuery.year}`;
+      }
+    }
+
+    // Try the optimized search first
+    const books = await performBookSearch(searchQuery, limit);
+
+    // If we got results, return them
     if (!shouldTryFuzzySearch(books, 1)) {
       return books;
     }
 
+    // If no results and we used field-specific search, try a general search
+    if (searchQuery !== trimmedQuery && parsedQuery.titleKeywords.length > 0) {
+      console.debug('[OpenLibrary] Field-specific search returned no results, trying general search');
+      const generalBooks = await performBookSearch(parsedQuery.titleKeywords[0], limit);
+      if (!shouldTryFuzzySearch(generalBooks, 1)) {
+        return generalBooks;
+      }
+    }
+
     // Try fuzzy alternatives
     console.debug('[OpenLibrary] No results for exact search, trying fuzzy alternatives');
-    const alternatives = generateFuzzyAlternatives(trimmedQuery, 2);
+    const alternatives = generateFuzzyAlternatives(trimmedQuery, 3);
 
     for (const alternative of alternatives) {
       console.debug(`[OpenLibrary] Trying fuzzy alternative: "${alternative}"`);
@@ -60,7 +95,7 @@ export const searchBooks = async (query, limit = 12) => {
       }
     }
 
-    // Return empty array if no fuzzy alternatives worked
+    // Return empty array if no alternatives worked
     return books;
   } catch (error) {
     console.error('Error searching books:', error);

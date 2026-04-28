@@ -373,7 +373,7 @@ describe('Item Management Integration Tests', () => {
       // Books tab should be selected by default, so we can just search
 
       // Search for a book
-      const searchInput = screen.getByPlaceholderText(/search for books/i);
+      const searchInput = screen.getByPlaceholderText(/Harry Potter/i);
       await user.click(searchInput);
       await user.paste('To Kill a Mockingbird');
 
@@ -466,7 +466,7 @@ describe('Item Management Integration Tests', () => {
 
       // Wait for the modal to be fully rendered
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/search for books/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Harry Potter/i)).toBeInTheDocument();
       }, { timeout: 3000 });
 
       // Switch to movie tab - use getAllByRole to find all buttons, then filter by text
@@ -477,11 +477,11 @@ describe('Item Management Integration Tests', () => {
 
       // Wait for the placeholder to update
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/search for movies/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Inception/i)).toBeInTheDocument();
       }, { timeout: 3000 });
 
       // Search for a movie
-      const searchInput = screen.getByPlaceholderText(/search for movies/i);
+      const searchInput = screen.getByPlaceholderText(/Inception/i);
       await user.click(searchInput);
       await user.clear(searchInput);
       await user.paste('The Matrix');

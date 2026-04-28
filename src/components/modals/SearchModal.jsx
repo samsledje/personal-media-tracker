@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Book, Film } from 'lucide-react';
 import { searchBooks, OpenLibraryError } from '../../services/openLibraryService.js';
 import { searchMovies, isServiceAvailable, OMDBError } from '../../services/omdbService.js';
+import { searchMovies as searchMoviesTMDB, isServiceAvailable as isTmdbAvailable, TMDBError } from '../../services/tmdbService.js';
 import { KEYBOARD_SHORTCUTS } from '../../constants/index.js';
 import { toast } from '../../services/toastService.js';
 
@@ -46,22 +47,18 @@ const SearchModal = ({ onClose, onSelect }) => {
     setLoading(false);
   };
 
-  const handleSearchMovies = async (searchQuery) => {
+  const handleSearchMoviesOmdb = async (searchQuery) => {
     if (!isServiceAvailable()) {
       setShowApiKeyWarning(true);
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
-    setFocusedIndex(-1); // Reset focus when searching
     try {
       const movies = await searchMovies(searchQuery);
       setResults(movies);
       setShowApiKeyWarning(false);
     } catch (error) {
       console.error('Error searching movies:', error);
-
-      // Handle different OMDB error types
       if (error instanceof OMDBError) {
         switch (error.type) {
           case 'AUTH_FAILED':
@@ -85,6 +82,32 @@ const SearchModal = ({ onClose, onSelect }) => {
         toast(error.message || 'Failed to search movies', { type: 'error' });
       }
     }
+  };
+
+  const handleSearchMovies = async (searchQuery) => {
+    setLoading(true);
+    setFocusedIndex(-1);
+
+    if (isTmdbAvailable()) {
+      try {
+        const movies = await searchMoviesTMDB(searchQuery);
+        setResults(movies);
+        setShowApiKeyWarning(false);
+        setLoading(false);
+        return;
+      } catch (error) {
+        if (error instanceof TMDBError && error.type === 'AUTH_FAILED') {
+          toast('TMDB API key is invalid. Falling back to OMDb search.', { type: 'warning' });
+          // fall through to OMDb
+        } else {
+          toast(error.message || 'Failed to search movies', { type: 'error' });
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    await handleSearchMoviesOmdb(searchQuery);
     setLoading(false);
   };
 
@@ -262,7 +285,12 @@ const SearchModal = ({ onClose, onSelect }) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Search for ${searchType}s...`}
+                placeholder={searchType === 'movie'
+                  ? (isTmdbAvailable()
+                      ? 'Try: "Inception", "Christopher Nolan", "Tom Hanks 2000"'
+                      : 'Try: "Inception", "The Matrix 1999"')
+                  : 'Try: "Harry Potter", "author Rowling", "1984 by Orwell"'
+                }
                 className="w-full pl-4 pr-10 py-3 sm:py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-500 text-base"
               />
               {query && (
@@ -286,6 +314,21 @@ const SearchModal = ({ onClose, onSelect }) => {
               Search
             </button>
           </form>
+          
+          {/* Search tips */}
+          {!hasSearched && (
+            <div className="mt-3 p-3 bg-slate-700/30 border border-slate-600 rounded-lg">
+              <p className="text-xs text-slate-400">
+                {searchType === 'movie' ? (
+                  isTmdbAvailable()
+                    ? <>💡 <strong>Search tips:</strong> Search by title, person name (e.g. "Christopher Nolan"), or add a year to narrow results</>
+                    : <>💡 <strong>Search tips:</strong> Search by title or add a year (e.g. "The Matrix 1999"). Add a TMDB API key in Settings to enable searching by person name.</>
+                ) : (
+                  <>💡 <strong>Search tips:</strong> Try "author [name]" or "[title] by [author]" for targeted searches</>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="p-4 pb-6">
@@ -296,10 +339,25 @@ const SearchModal = ({ onClose, onSelect }) => {
             </div>
           ) : results.length > 0 ? (
             <>
+              {results.some(result => result._personMatch) && (
+                <div className="mb-4 p-3 bg-slate-700/50 border border-slate-600 rounded-lg">
+                  <p className="text-sm text-slate-200">
+                    Showing movies from <strong>{results.find(r => r._personMatch)._personMatch}</strong>
+                    {results.find(r => r._matchedAs) && ` (${results.find(r => r._matchedAs)._matchedAs})`}
+                  </p>
+                </div>
+              )}
               {results.some(result => result._fuzzySearch) && (
                 <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                   <p className="text-sm text-blue-200">
                     🔍 No exact matches found. Showing results for similar searches.
+                  </p>
+                </div>
+              )}
+              {results.some(result => result._relevanceScore !== undefined) && (
+                <div className="mb-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
+                  <p className="text-sm text-green-200">
+                    ✨ Results ranked by relevance to your search criteria
                   </p>
                 </div>
               )}
@@ -316,6 +374,11 @@ const SearchModal = ({ onClose, onSelect }) => {
                     {result._fuzzySearch && (
                       <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
                         Similar
+                      </div>
+                    )}
+                    {result._relevanceScore !== undefined && result._relevanceScore > 50 && !result._fuzzySearch && (
+                      <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                        ✓ Match
                       </div>
                     )}
                     {result.coverUrl && (

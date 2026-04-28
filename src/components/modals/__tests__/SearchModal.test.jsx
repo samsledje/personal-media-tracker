@@ -94,7 +94,7 @@ describe('SearchModal', () => {
     it('should render search input and button', () => {
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      expect(screen.getByPlaceholderText('Search for books...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"')).toBeInTheDocument();
       
       // Search button has the text "Search"
       const buttons = screen.getAllByRole('button');
@@ -105,7 +105,7 @@ describe('SearchModal', () => {
     it('should default to book search type', () => {
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      expect(screen.getByPlaceholderText('Search for books...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"')).toBeInTheDocument();
     });
 
     it('should show initial empty state message', () => {
@@ -124,7 +124,7 @@ describe('SearchModal', () => {
       const movieButton = buttons.find(btn => btn.textContent.includes('movie'));
       await user.click(movieButton);
       
-      expect(screen.getByPlaceholderText('Search for movies...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"')).toBeInTheDocument();
       expect(screen.getByText(/Search for movies to get started/i)).toBeInTheDocument();
     });
 
@@ -138,11 +138,11 @@ describe('SearchModal', () => {
       
       // Switch to movies
       await user.click(movieButton);
-      expect(screen.getByPlaceholderText('Search for movies...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"')).toBeInTheDocument();
       
       // Switch back to books
       await user.click(bookButton);
-      expect(screen.getByPlaceholderText('Search for books...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"')).toBeInTheDocument();
     });
 
     it('should highlight active search type button', () => {
@@ -159,7 +159,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -173,7 +173,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -192,7 +192,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -225,7 +225,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -250,7 +250,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -269,7 +269,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('nonexistent');
       await user.click(getButtonByText('Search'));
@@ -287,7 +287,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('matrix');
       await user.click(getButtonByText('Search'));
@@ -303,7 +303,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('matrix');
       await user.click(getButtonByText('Search'));
@@ -324,7 +324,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('matrix');
       await user.click(getButtonByText('Search'));
@@ -347,7 +347,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -375,7 +375,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -402,7 +402,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -421,7 +421,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -453,7 +453,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('matrix');
       await user.click(getButtonByText('Search'));
@@ -483,7 +483,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -505,7 +505,7 @@ describe('SearchModal', () => {
       
       await user.click(getButtonByText('movie'));
       
-      const input = screen.getByPlaceholderText('Search for movies...');
+      const input = screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"');
       await user.click(input);
       await user.paste('matrix');
       await user.click(getButtonByText('Search'));
@@ -536,7 +536,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.keyboard('{Control>}{Enter}{/Control}');
@@ -550,7 +550,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.keyboard('{Meta>}{Enter}{/Meta}');
@@ -566,30 +566,30 @@ describe('SearchModal', () => {
       
       // Switch to movies first
       await user.click(getButtonByText('movie'));
-      expect(screen.getByPlaceholderText('Search for movies...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"')).toBeInTheDocument();
       
       // Press B to switch to books
       await user.keyboard('b');
       
-      expect(screen.getByPlaceholderText('Search for books...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"')).toBeInTheDocument();
     });
 
     it('should switch to movies with M key', async () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      expect(screen.getByPlaceholderText('Search for books...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"')).toBeInTheDocument();
       
       await user.keyboard('m');
       
-      expect(screen.getByPlaceholderText('Search for movies...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Try: "Inception", "The Matrix 1999"')).toBeInTheDocument();
     });
 
     it('should focus search input with / key', async () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       // Click somewhere else first
       await user.click(screen.getByText('Search Books & Movies'));
@@ -604,7 +604,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.keyboard('{Control>}k{/Control}');
       
@@ -615,7 +615,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.keyboard('{Meta>}k{/Meta}');
       
@@ -628,7 +628,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       const { rerender } = render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -640,7 +640,7 @@ describe('SearchModal', () => {
 
     it('should navigate down from search input to first result', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}');
@@ -652,7 +652,7 @@ describe('SearchModal', () => {
 
     it('should navigate right between results', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first result
@@ -664,7 +664,7 @@ describe('SearchModal', () => {
 
     it('should navigate left between results', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first result
@@ -677,7 +677,7 @@ describe('SearchModal', () => {
 
     it('should select result with Enter key', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first result
@@ -692,7 +692,7 @@ describe('SearchModal', () => {
 
     it('should select result with Space key', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first result
@@ -707,7 +707,7 @@ describe('SearchModal', () => {
 
     it('should navigate up to search input from first row', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first result
@@ -720,7 +720,7 @@ describe('SearchModal', () => {
 
     it('should not navigate beyond last result', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first
@@ -737,7 +737,7 @@ describe('SearchModal', () => {
 
     it('should not navigate before first result', async () => {
       const user = userEvent.setup();
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       
       await user.click(input);
       await user.keyboard('{ArrowDown}'); // Focus first
@@ -766,7 +766,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('gatsby');
       await user.click(getButtonByText('Search'));
@@ -802,7 +802,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -831,7 +831,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -848,7 +848,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('test');
       await user.click(getButtonByText('Search'));
@@ -865,7 +865,7 @@ describe('SearchModal', () => {
       const user = userEvent.setup();
       render(<SearchModal onClose={mockOnClose} onSelect={mockOnSelect} />);
       
-      const input = screen.getByPlaceholderText('Search for books...');
+      const input = screen.getByPlaceholderText('Try: "Harry Potter", "author Rowling", "1984 by Orwell"');
       await user.click(input);
       await user.paste('  gatsby  ');
       await user.click(getButtonByText('Search'));

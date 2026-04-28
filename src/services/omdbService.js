@@ -1,6 +1,11 @@
 // OMDb API service for movie searches
 import { getConfig, hasApiKey } from '../config.js';
 import { generateFuzzyAlternatives, shouldTryFuzzySearch } from '../utils/fuzzySearchUtils.js';
+import {
+  parseSearchQuery,
+  generateSearchVariations,
+  filterAndRankResults
+} from '../utils/searchQueryParser.js';
 
 const OMDB_BASE_URL = 'https://www.omdbapi.com';
 
@@ -25,10 +30,11 @@ const getApiKey = () => {
 };
 
 /**
- * Search for movies using OMDb API
- * @param {string} query - Search query
+ * Search for movies using OMDb API with enhanced query parsing
+ * Supports search by title, director, actor, year, and series
+ * @param {string} query - Search query (e.g., "Inception", "director Nolan", "actor Tom Hanks")
  * @param {number} limit - Maximum number of results (default: 12)
- * @returns {Promise<object[]>} Array of movie objects
+ * @returns {Promise<object[]>} Array of movie objects, ranked by relevance
  */
 export const searchMovies = async (query, limit = 12) => {
   if (!query.trim()) {
@@ -43,35 +49,117 @@ export const searchMovies = async (query, limit = 12) => {
   const trimmedQuery = query.trim();
 
   try {
-    // Try the original search first
-    const movies = await performMovieSearch(trimmedQuery, limit, apiKey);
+    // Parse the query to understand search intent
+    const parsedQuery = parseSearchQuery(trimmedQuery);
+    console.debug('[OMDb] Parsed query:', parsedQuery);
 
-    // If we got results or this was already a fuzzy attempt, return them
-    if (!shouldTryFuzzySearch(movies, 1)) {
-      return movies;
+    // Generate search variations based on the parsed query
+    const searchVariations = generateSearchVariations(parsedQuery);
+    console.debug('[OMDb] Search variations:', searchVariations);
+
+    let allMovies = [];
+    let bestResults = [];
+    let usedFuzzy = false;
+
+    // Pass year param for title searches to narrow results at the API level
+    const yearParam = (parsedQuery.searchType === 'title' && parsedQuery.year) ? parsedQuery.year : null;
+
+    // Try each search variation
+    for (const variation of searchVariations) {
+      try {
+        console.debug(`[OMDb] Trying search variation: "${variation}"`);
+        const movies = await performMovieSearch(variation, limit * 2, apiKey, yearParam);
+        
+        if (movies.length > 0) {
+          console.debug(`[OMDb] Found ${movies.length} results for "${variation}"`);
+          allMovies = allMovies.concat(movies);
+          
+          // If this is a director/actor search, keep searching to get more results
+          if (parsedQuery.searchType === 'director' || parsedQuery.searchType === 'actor') {
+            continue;
+          }
+          
+          // For title searches, break on first success
+          break;
+        }
+      } catch (error) {
+        // Re-throw critical errors (auth, rate limit, quota)
+        if (error instanceof OMDBError) {
+          throw error;
+        }
+        console.debug(`[OMDb] Search variation "${variation}" failed:`, error.message);
+      }
     }
 
-    // Try fuzzy alternatives
-    console.debug('[OMDb] No results for exact search, trying fuzzy alternatives');
-    const alternatives = generateFuzzyAlternatives(trimmedQuery, 2);
+    // Remove duplicate movies based on imdbID (if available) or title+year
+    const uniqueMovies = [];
+    const seen = new Set();
+    
+    for (const movie of allMovies) {
+      // Ensure we have a valid key for deduplication
+      const key = (movie.imdbID && typeof movie.imdbID === 'string') 
+        ? movie.imdbID 
+        : `${movie.title || 'unknown'}_${movie.year || 'unknown'}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueMovies.push(movie);
+      }
+    }
 
-    for (const alternative of alternatives) {
+    // Filter and rank results based on search criteria
+    if (parsedQuery.searchType !== 'title' || parsedQuery.year || parsedQuery.yearRange) {
+      console.debug('[OMDb] Filtering and ranking results by search criteria');
+      bestResults = filterAndRankResults(uniqueMovies, parsedQuery, 0);
+      
+      // If we have criteria-based filtering and got good matches, use them
+      if (bestResults.length > 0 && bestResults[0]._relevanceScore > 20) {
+        console.debug(`[OMDb] Using ${bestResults.length} filtered/ranked results`);
+        return bestResults.slice(0, limit);
+      }
+    }
+
+    // If we have some results, return them
+    if (uniqueMovies.length > 0) {
+      return uniqueMovies.slice(0, limit);
+    }
+
+    // No results yet - try fuzzy alternatives using the best available base term
+    console.debug('[OMDb] No results for search variations, trying fuzzy alternatives');
+    const fuzzyBase = (parsedQuery.director || parsedQuery.actor)
+      ? (parsedQuery.director || parsedQuery.actor)
+      : (parsedQuery.titleKeywords[0] || trimmedQuery);
+    const fuzzyAlternatives = generateFuzzyAlternatives(fuzzyBase, 3);
+
+    for (const alternative of fuzzyAlternatives) {
       console.debug(`[OMDb] Trying fuzzy alternative: "${alternative}"`);
       try {
         const fuzzyMovies = await performMovieSearch(alternative, limit, apiKey);
         if (fuzzyMovies.length > 0) {
           console.debug(`[OMDb] Found ${fuzzyMovies.length} results with fuzzy search: "${alternative}"`);
-          // Mark these results as coming from fuzzy search
-          return fuzzyMovies.map(movie => ({ ...movie, _fuzzySearch: true, _originalQuery: trimmedQuery }));
+          usedFuzzy = true;
+          bestResults = fuzzyMovies;
+          break;
         }
       } catch (error) {
-        // Continue to next alternative if this one fails
+        // Re-throw critical errors (auth, rate limit, quota)
+        if (error instanceof OMDBError) {
+          throw error;
+        }
         console.debug(`[OMDb] Fuzzy alternative "${alternative}" failed:`, error.message);
       }
     }
 
-    // Return empty array if no fuzzy alternatives worked
-    return movies;
+    // Mark fuzzy results
+    if (usedFuzzy) {
+      return bestResults.map(movie => ({
+        ...movie,
+        _fuzzySearch: true,
+        _originalQuery: trimmedQuery
+      }));
+    }
+
+    // Return empty array if nothing worked
+    return [];
   } catch (error) {
     console.error('Error searching movies:', error);
     throw error;
@@ -85,9 +173,10 @@ export const searchMovies = async (query, limit = 12) => {
  * @param {string} apiKey - OMDb API key
  * @returns {Promise<object[]>} Array of movie objects
  */
-const performMovieSearch = async (query, limit, apiKey) => {
+const performMovieSearch = async (query, limit, apiKey, year = null) => {
+  const yearParam = year ? `&y=${encodeURIComponent(year)}` : '';
   const response = await fetch(
-    `${OMDB_BASE_URL}/?s=${encodeURIComponent(query)}&apikey=${apiKey}`
+    `${OMDB_BASE_URL}/?s=${encodeURIComponent(query)}&apikey=${apiKey}${yearParam}`
   );
 
   // Check for HTTP errors
@@ -158,7 +247,8 @@ const performMovieSearch = async (query, limit, apiKey) => {
           year: details.Year,
           coverUrl: details.Poster !== 'N/A' ? details.Poster : null,
           type: 'movie',
-          rating: details.imdbRating !== 'N/A' ? Math.round(parseFloat(details.imdbRating) / 2) : 0
+          rating: details.imdbRating !== 'N/A' ? Math.round(parseFloat(details.imdbRating) / 2) : 0,
+          imdbID: movie.imdbID // Store for deduplication
         };
       } catch (error) {
         console.warn(`Error getting details for ${movie.Title}:`, error);

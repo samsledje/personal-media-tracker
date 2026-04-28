@@ -77,15 +77,49 @@ export const generateFuzzyAlternatives = (query, maxAlternatives = 3) => {
         alternatives.add(corrected);
     }
 
-    // Generate variations by removing/adding common letters
+    // For long queries, prioritize partial matches first (most useful)
+    if (trimmedQuery.length > 10) {
+        const words = trimmedQuery.split(/\s+/);
+        if (words.length > 2) {
+            // Try searching with fewer words
+            for (let i = Math.max(1, words.length - 2); i < words.length; i++) {
+                const partial = words.slice(0, i).join(' ');
+                if (partial.length > 2 && !alternatives.has(partial)) {
+                    alternatives.add(partial);
+                }
+            }
+        }
+    }
+
+    // Generate typo variations (limit to avoid too many alternatives)
     const variations = [
-        // Remove double letters
+        // Remove double letters (e.g., "Innception" -> "Inception")
         trimmedQuery.replace(/(.)\1+/g, '$1'),
-        // Add missing vowels (simple cases)
-        trimmedQuery.replace(/([^aeiou])t([^aeiou])/gi, '$1e$2'),
-        // Common transpositions
-        trimmedQuery.replace(/(.)(.)/g, '$2$1').slice(0, trimmedQuery.length)
     ];
+
+    // Add character transposition variations (swap adjacent characters)
+    // This catches common typos like "Inceptoin" -> "Inception"
+    // Only add first few to avoid explosion of alternatives
+    const maxTranspositions = 3;
+    const chars = trimmedQuery.split('');
+    for (let i = 0; i < Math.min(trimmedQuery.length - 1, maxTranspositions); i++) {
+        const charsCopy = [...chars]; // Create a copy for each iteration
+        [charsCopy[i], charsCopy[i + 1]] = [charsCopy[i + 1], charsCopy[i]];
+        const transposed = charsCopy.join('');
+        if (transposed !== trimmedQuery && transposed.length > 2) {
+            variations.push(transposed);
+        }
+    }
+
+    // Add variations with single character removed (catches extra character typos)
+    // Only add first few positions to avoid explosion
+    const maxRemovals = 3;
+    for (let i = 0; i < Math.min(trimmedQuery.length, maxRemovals); i++) {
+        const variation = trimmedQuery.slice(0, i) + trimmedQuery.slice(i + 1);
+        if (variation.length > 2) {
+            variations.push(variation);
+        }
+    }
 
     variations.forEach(variation => {
         if (variation !== trimmedQuery && variation.length > 2 && !alternatives.has(variation)) {
@@ -93,8 +127,8 @@ export const generateFuzzyAlternatives = (query, maxAlternatives = 3) => {
         }
     });
 
-    // If we have a long query, try partial matches
-    if (trimmedQuery.length > 6) {
+    // Add more partial matches for shorter queries (that weren't handled above)
+    if (trimmedQuery.length > 6 && trimmedQuery.length <= 10) {
         const words = trimmedQuery.split(/\s+/);
         if (words.length > 1) {
             // Try searching with fewer words

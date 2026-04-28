@@ -8,6 +8,7 @@ import {
   saveCardSize,
   loadHalfStarsEnabled,
   saveHalfStarsEnabled,
+  saveAllSettings,
 } from '../../services/configService.js';
 import { LOCAL_STORAGE_KEYS, DEFAULT_THEME, CARD_SIZES } from '../../constants/index.js';
 
@@ -233,6 +234,24 @@ describe('configService', () => {
       
       expect(() => saveHalfStarsEnabled(true)).not.toThrow();
       spy.mockRestore();
+    });
+  });
+
+  describe('saveAllSettings with tmdbApiKey', () => {
+    it('should save tmdbApiKey to config when provided', async () => {
+      await saveAllSettings(null, { tmdbApiKey: 'my-tmdb-key' });
+      // saveConfig writes to localStorage under 'mediaTracker_config'
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config') || '{}');
+      expect(stored.tmdbApiKey).toBe('my-tmdb-key');
+    });
+
+    it('should not modify tmdbApiKey when not provided in settings', async () => {
+      // Pre-set a tmdb key
+      localStorage.setItem('mediaTracker_config', JSON.stringify({ tmdbApiKey: 'existing-key' }));
+      await saveAllSettings(null, { omdbApiKey: 'new-omdb-key' });
+      const stored = JSON.parse(localStorage.getItem('mediaTracker_config') || '{}');
+      // tmdbApiKey should be untouched
+      expect(stored.tmdbApiKey).toBe('existing-key');
     });
   });
 });

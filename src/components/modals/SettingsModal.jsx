@@ -24,10 +24,14 @@ const SettingsModal = ({
   // API Keys
   omdbApiKey,
   updateApiKey,
+  tmdbApiKey,
+  updateTmdbApiKey,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [apiKeyInput, setApiKeyInput] = useState(omdbApiKey || '');
   const [showApiKeySaved, setShowApiKeySaved] = useState(false);
+  const [tmdbKeyInput, setTmdbKeyInput] = useState(tmdbApiKey || '');
+  const [showTmdbKeySaved, setShowTmdbKeySaved] = useState(false);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -46,6 +50,13 @@ const SettingsModal = ({
     updateApiKey(trimmed);
     setShowApiKeySaved(true);
     setTimeout(() => setShowApiKeySaved(false), 2000);
+  };
+
+  const handleSaveTmdbKey = () => {
+    const trimmed = tmdbKeyInput.trim();
+    updateTmdbApiKey(trimmed);
+    setShowTmdbKeySaved(true);
+    setTimeout(() => setShowTmdbKeySaved(false), 2000);
   };
 
   const isGoogleDrive = storageAdapter?.getStorageType() === 'googledrive';
@@ -265,6 +276,60 @@ const SettingsModal = ({
                   </li>
                   <li>Enter your email and request a free key</li>
                   <li>Check your email and paste the key above</li>
+                </ol>
+              </div>
+
+              <div className="border-t border-slate-700 pt-4">
+                <label className="block text-sm font-medium mb-1">
+                  TMDB API Key{' '}
+                  <span className="text-slate-400 text-xs font-normal">(optional)</span>
+                </label>
+                <p className="text-xs text-slate-400 mb-2">
+                  Enables searching by director or actor name (e.g. "Christopher Nolan").
+                </p>
+                <input
+                  type="password"
+                  value={tmdbKeyInput}
+                  onChange={(e) => setTmdbKeyInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && tmdbKeyInput.trim()) handleSaveTmdbKey(); }}
+                  placeholder="Enter your TMDB API key"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {showTmdbKeySaved && (
+                <div className="p-3 bg-green-900/30 border border-green-500/50 rounded-lg">
+                  <p className="text-sm text-green-200">✓ TMDB key saved</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleSaveTmdbKey}
+                disabled={!tmdbKeyInput.trim()}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                style={{ backgroundColor: tmdbKeyInput.trim() ? 'var(--mt-highlight)' : undefined }}
+              >
+                <Save className="w-4 h-4" />
+                Save TMDB Key
+              </button>
+
+              <div className="p-3 bg-slate-700/50 rounded-lg">
+                <p className="text-sm text-slate-300 font-medium mb-2">Get a free TMDB key</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400">
+                  <li>
+                    Visit{' '}
+                    <a
+                      href="https://www.themoviedb.org/signup"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      themoviedb.org <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </li>
+                  <li>Create a free account</li>
+                  <li>Go to Settings → API and request an API key</li>
+                  <li>Paste the key above</li>
                 </ol>
               </div>
             </div>

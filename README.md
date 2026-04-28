@@ -201,6 +201,59 @@ The app will work without an API key, but movie search functionality will be dis
 
 If you don't provide an OMDb API key the movie search functionality will be limited or fail — the app will still work for manual entry and browsing local markdown files.
 
+## Enhanced Online Search
+
+The online search feature now supports intelligent query parsing and advanced search capabilities:
+
+### Smart Search Syntax
+
+**For Movies (OMDb):**
+- Basic title search: `Inception` or `The Matrix`
+- Search by director: `director Christopher Nolan` or `Inception by Nolan`
+- Search by actor: `actor Tom Hanks` or `Matrix starring Keanu Reeves`
+- Filter by year: `Inception 2010` or `Matrix 1999-2003`
+- Series search: `Matrix series` or `Lord of the Rings trilogy`
+- Combined: `Inception directed by Nolan 2010`
+
+**For Books (Open Library):**
+- Basic title search: `Harry Potter` or `1984`
+- Search by author: `author J.K. Rowling` or `1984 by Orwell`
+- Filter by year: `Harry Potter 1997`
+
+### Features
+
+- **Fuzzy Search**: Automatically handles typos and misspellings (e.g., "Inceptoin" → "Inception")
+- **Intelligent Ranking**: Results are ranked by relevance to your search criteria
+- **Multiple Strategies**: Tries different search variations to maximize results
+- **Visual Indicators**: 
+  - 🔍 Blue "Similar" badge for fuzzy search results
+  - ✓ Green "Match" badge for highly relevant results
+  - Banner when results are ranked by custom criteria
+
+### Examples
+
+```
+# Search movies by director
+director Nolan
+directed by Quentin Tarantino
+
+# Search movies by actor
+actor Leonardo DiCaprio
+Matrix with Keanu Reeves
+
+# Search with year constraints
+Inception 2010
+movies by Nolan 2008-2014
+
+# Search books by author
+author Stephen King
+1984 by George Orwell
+
+# Handle typos automatically
+Inceptoin       # Finds "Inception"
+Hary Poter      # Finds "Harry Potter"
+```
+
 ## Screenshots
 
 ### Main Library View

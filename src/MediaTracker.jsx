@@ -191,7 +191,7 @@ const MediaTracker = () => {
     resetTheme
   } = useTheme(storageAdapter);
 
-  const { omdbApiKey, updateApiKey } = useOmdbApi(storageAdapter);
+  const { omdbApiKey, updateApiKey, tmdbApiKey, updateTmdbApiKey } = useOmdbApi(storageAdapter);
 
   const [halfStarsEnabled, setHalfStarsEnabled] = useHalfStars(storageAdapter);
 
@@ -1567,6 +1567,8 @@ const MediaTracker = () => {
           onClearCache={handleClearCache}
           omdbApiKey={omdbApiKey}
           updateApiKey={updateApiKey}
+          tmdbApiKey={tmdbApiKey}
+          updateTmdbApiKey={updateTmdbApiKey}
         />
       )}
 

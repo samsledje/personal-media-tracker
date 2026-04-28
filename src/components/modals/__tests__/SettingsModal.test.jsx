@@ -19,6 +19,8 @@ const defaultProps = {
   onClearCache: vi.fn(),
   omdbApiKey: '',
   updateApiKey: vi.fn(),
+  tmdbApiKey: '',
+  updateTmdbApiKey: vi.fn(),
 };
 
 describe('SettingsModal', () => {
@@ -173,5 +175,44 @@ describe('SettingsModal', () => {
     unmount();
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
     removeSpy.mockRestore();
+  });
+
+  describe('TMDB API key', () => {
+    it('renders TMDB key input in API Keys tab', () => {
+      render(<SettingsModal {...defaultProps} initialTab="API Keys" />);
+      expect(screen.getByPlaceholderText('Enter your TMDB API key')).toBeInTheDocument();
+    });
+
+    it('calls updateTmdbApiKey when Save TMDB Key is clicked', () => {
+      const updateTmdbApiKey = vi.fn();
+      render(<SettingsModal {...defaultProps} initialTab="API Keys" updateTmdbApiKey={updateTmdbApiKey} />);
+      const input = screen.getByPlaceholderText('Enter your TMDB API key');
+      fireEvent.change(input, { target: { value: 'my-tmdb-key' } });
+      fireEvent.click(screen.getByText('Save TMDB Key'));
+      expect(updateTmdbApiKey).toHaveBeenCalledWith('my-tmdb-key');
+    });
+
+    it('shows TMDB saved confirmation after saving', () => {
+      render(<SettingsModal {...defaultProps} initialTab="API Keys" />);
+      const input = screen.getByPlaceholderText('Enter your TMDB API key');
+      fireEvent.change(input, { target: { value: 'tmdb-key-abc' } });
+      fireEvent.click(screen.getByText('Save TMDB Key'));
+      expect(screen.getByText('✓ TMDB key saved')).toBeInTheDocument();
+    });
+
+    it('saves TMDB key on Enter key in input', () => {
+      const updateTmdbApiKey = vi.fn();
+      render(<SettingsModal {...defaultProps} initialTab="API Keys" updateTmdbApiKey={updateTmdbApiKey} />);
+      const input = screen.getByPlaceholderText('Enter your TMDB API key');
+      fireEvent.change(input, { target: { value: 'enter-tmdb-key' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(updateTmdbApiKey).toHaveBeenCalledWith('enter-tmdb-key');
+    });
+
+    it('populates TMDB input from tmdbApiKey prop', () => {
+      render(<SettingsModal {...defaultProps} initialTab="API Keys" tmdbApiKey="existing-tmdb-key" />);
+      const input = screen.getByPlaceholderText('Enter your TMDB API key');
+      expect(input.value).toBe('existing-tmdb-key');
+    });
   });
 });

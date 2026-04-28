@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getConfig, saveConfig, hasApiKey } from '../config.js';
 import { loadAllSettings, saveAllSettings } from '../services/configService.js';
 
+
 /**
  * Custom hook for managing OMDb API key
  * @param {StorageAdapter} storage - Storage adapter instance (optional)
@@ -9,45 +10,61 @@ import { loadAllSettings, saveAllSettings } from '../services/configService.js';
  */
 export const useOmdbApi = (storage = null) => {
   const [omdbApiKey, setOmdbApiKey] = useState('');
+  const [tmdbApiKey, setTmdbApiKey] = useState('');
 
-  // Load API key on mount and when storage changes
+  // Load API keys on mount and when storage changes
   useEffect(() => {
     if (storage && storage.isConnected()) {
       loadAllSettings(storage).then(settings => {
-        const fileKey = settings.omdbApiKey;
-        const localKey = getConfig('omdbApiKey');
-        const key = fileKey || localKey || '';
-        setOmdbApiKey(key);
-        // Migrate existing localStorage key to file if file doesn't have one
-        if (!fileKey && localKey) {
-          saveAllSettings(storage, { omdbApiKey: localKey }).catch(err => console.warn('Error migrating API key to file:', err));
+        // OMDb key
+        const fileOmdbKey = settings.omdbApiKey;
+        const localOmdbKey = getConfig('omdbApiKey');
+        const omdbKey = fileOmdbKey || localOmdbKey || '';
+        setOmdbApiKey(omdbKey);
+        if (!fileOmdbKey && localOmdbKey) {
+          saveAllSettings(storage, { omdbApiKey: localOmdbKey }).catch(err => console.warn('Error migrating OMDb API key to file:', err));
+        }
+
+        // TMDB key
+        const fileTmdbKey = settings.tmdbApiKey;
+        const localTmdbKey = getConfig('tmdbApiKey');
+        const tmdbKey = fileTmdbKey || localTmdbKey || '';
+        setTmdbApiKey(tmdbKey);
+        if (!fileTmdbKey && localTmdbKey) {
+          saveAllSettings(storage, { tmdbApiKey: localTmdbKey }).catch(err => console.warn('Error migrating TMDB API key to file:', err));
         }
       }).catch(err => {
-        console.warn('Error loading OMDb API key from file:', err);
-        const currentKey = getConfig('omdbApiKey');
-        setOmdbApiKey(currentKey || '');
+        console.warn('Error loading API keys from file:', err);
+        setOmdbApiKey(getConfig('omdbApiKey') || '');
+        setTmdbApiKey(getConfig('tmdbApiKey') || '');
       });
     } else {
-      const currentKey = getConfig('omdbApiKey');
-      setOmdbApiKey(currentKey || '');
+      setOmdbApiKey(getConfig('omdbApiKey') || '');
+      setTmdbApiKey(getConfig('tmdbApiKey') || '');
     }
   }, [storage]);
 
-  /**
-   * Update and save API key
-   */
   const updateApiKey = (key) => {
     setOmdbApiKey(key);
     saveConfig({ omdbApiKey: key });
-    // Also save to file if storage is available
     if (storage && storage.isConnected()) {
-      saveAllSettings(storage, { omdbApiKey: key }).catch(err => console.warn('Error saving API key to file:', err));
+      saveAllSettings(storage, { omdbApiKey: key }).catch(err => console.warn('Error saving OMDb API key to file:', err));
+    }
+  };
+
+  const updateTmdbApiKey = (key) => {
+    setTmdbApiKey(key);
+    saveConfig({ tmdbApiKey: key });
+    if (storage && storage.isConnected()) {
+      saveAllSettings(storage, { tmdbApiKey: key }).catch(err => console.warn('Error saving TMDB API key to file:', err));
     }
   };
 
   return {
     omdbApiKey,
     updateApiKey,
-    hasApiKey: hasApiKey()
+    hasApiKey: hasApiKey(),
+    tmdbApiKey,
+    updateTmdbApiKey,
   };
 };
