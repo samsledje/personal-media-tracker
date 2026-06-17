@@ -7,9 +7,14 @@ import { X } from 'lucide-react';
 const HelpModal = ({ onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg max-w-3xl w-full p-6 mt-4 mb-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-modal-title"
+        className="bg-slate-800 border border-slate-700 rounded-lg max-w-3xl w-full p-6 mt-4 mb-4 max-h-[calc(100vh-2rem)] overflow-y-auto"
+      >
         <div className="flex items-start justify-between mb-4">
-          <h2 className="text-xl font-bold">Keyboard shortcuts</h2>
+          <h2 id="help-modal-title" className="text-xl font-bold">Keyboard shortcuts</h2>
           <button 
             onClick={onClose} 
             className="p-1 hover:bg-slate-700 rounded"

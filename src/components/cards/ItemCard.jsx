@@ -38,10 +38,18 @@ const ItemCard = memo(({
     return 'empty';
   }, [halfStarsEnabled]);
 
+  const creator = item.author || item.director;
+  const ariaLabel = `${item.title}${creator ? `, ${creator}` : ''}, ${item.type}${
+    item.status ? `, ${STATUS_LABELS[item.status]}` : ''
+  }${selectionMode ? (isSelected ? ', selected' : ', not selected') : ''}`;
+
   return (
     <div
       ref={(el) => registerCardRef(item.id, el)}
       onClick={handleClick}
+      role="button"
+      aria-label={ariaLabel}
+      aria-pressed={selectionMode ? isSelected : undefined}
       className={`bg-slate-800/30 border rounded-lg overflow-hidden cursor-pointer transition-all relative w-full flex flex-col h-full ${
         isFocused ? 'ring-2 ring-blue-500' :
         isSelected ? 'ring-2 ring-yellow-500' :
@@ -51,7 +59,9 @@ const ItemCard = memo(({
       {/* Selection checkbox */}
       {selectionMode && (
         <div className="absolute top-2 left-2 z-10">
-          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+          <div
+            aria-hidden="true"
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
             isSelected ? 'bg-yellow-500 border-yellow-500' : 'bg-slate-800 border-slate-400'
           }`}>
             {isSelected && (
@@ -106,9 +116,9 @@ const ItemCard = memo(({
         {/* Tags */}
         {item.tags && item.tags.length > 0 && cardSize !== 'tiny' && (
           <div className="flex flex-wrap gap-1 mt-2">
-            {item.tags.slice(0, 3).map((tag, i) => (
+            {item.tags.slice(0, 3).map((tag) => (
               <span
-                key={i}
+                key={tag}
                 className={`px-2 py-1 rounded-full ${cardSize === 'small' ? 'text-xs' : 'text-xs'}`}
                 style={{ backgroundColor: hexToRgba(highlightColor, 0.12), color: 'white' }}
               >

@@ -155,9 +155,9 @@ const ViewDetails = ({ item, hexToRgba, highlightColor, hideRating = false, onFe
         <div>
           <div className="text-sm font-medium text-slate-400 mb-2">Cast</div>
           <div className="flex flex-wrap gap-2">
-            {item.actors.map((actor, i) => (
+            {item.actors.map((actor) => (
               <span
-                key={i}
+                key={actor}
                 className="px-3 py-1 bg-slate-700 rounded-full text-sm"
               >
                 {actor}
@@ -214,9 +214,9 @@ const ViewDetails = ({ item, hexToRgba, highlightColor, hideRating = false, onFe
             Tags
           </div>
           <div className="flex flex-wrap gap-2">
-            {item.tags.map((tag, i) => (
+            {item.tags.map((tag) => (
               <span
-                key={i}
+                key={tag}
                 className="px-3 py-1 rounded-full text-sm"
                 style={{
                   backgroundColor: hexToRgba(highlightColor, 0.12),

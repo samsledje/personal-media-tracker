@@ -227,9 +227,9 @@ const EditForm = ({ item, onChange, fromSearch = false, allTags = [] }) => {
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {item.actors.map((actor, i) => (
+              {item.actors.map((actor) => (
                 <span
-                  key={i}
+                  key={actor}
                   className="px-3 py-1 bg-slate-600 rounded-full text-sm flex items-center gap-2"
                 >
                   {actor}
@@ -304,9 +304,9 @@ const EditForm = ({ item, onChange, fromSearch = false, allTags = [] }) => {
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {item.tags.map((tag, i) => (
+          {item.tags.map((tag) => (
             <span
-              key={i}
+              key={tag}
               className="px-3 py-1 bg-slate-600 rounded-full text-sm flex items-center gap-2"
             >
               {tag}

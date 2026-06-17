@@ -238,11 +238,14 @@ const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRg
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="itemdetail-modal-title"
         className="bg-slate-800 border border-slate-700 rounded-lg w-full h-full sm:max-w-2xl sm:w-full sm:max-h-[90vh] sm:h-auto overflow-y-auto"
       >
         <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl font-bold truncate flex-1">{item.title}</h2>
+            <h2 id="itemdetail-modal-title" className="text-lg sm:text-xl font-bold truncate flex-1">{item.title}</h2>
           </div>
           {/* Right-side controls: action buttons only */}
           <div className="flex gap-2 flex-shrink-0">

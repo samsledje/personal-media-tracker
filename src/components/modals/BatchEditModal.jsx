@@ -89,9 +89,14 @@ const BatchEditModal = ({ onClose, onApply, selectedItems = [], isProcessing = f
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-2 sm:p-4 z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg w-full h-full sm:max-w-4xl sm:w-full sm:max-h-[90vh] sm:h-auto overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="batchedit-modal-title"
+        className="bg-slate-800 border border-slate-700 rounded-lg w-full h-full sm:max-w-4xl sm:w-full sm:max-h-[90vh] sm:h-auto overflow-y-auto"
+      >
         <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-bold">
+          <h2 id="batchedit-modal-title" className="text-lg sm:text-xl font-bold">
             {isProcessing ? 'Updating Items...' : 'Batch Edit Preview'}
           </h2>
           {!isProcessing && (
