@@ -1,4 +1,4 @@
-import { CSV_FORMATS, STATUS_TYPES } from '../constants/index.js';
+import { CSV_FORMATS, STATUS_TYPES, getDefaultStatus } from '../constants/index.js';
 import { toast } from '../services/toastService.js';
 
 /**
@@ -264,7 +264,7 @@ export const mapGenericRow = (r) => {
   // Try to map status, with fallback to default
   let status = r['status'] || r['Status'] || '';
   if (!status) {
-    status = type === 'book' ? STATUS_TYPES.BOOK.READ : STATUS_TYPES.MOVIE.WATCHED;
+    status = getDefaultStatus(type);
   }
   
   return {

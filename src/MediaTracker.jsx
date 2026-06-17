@@ -115,17 +115,13 @@ const MediaTracker = () => {
     storageInfo,
     isLoading,
     loadProgress,
-    undoStack,
     initializeStorage,
     loadItems,
     saveItem,
     deleteItem,
-    deleteItems,
-    undoLastDelete,
     selectStorage,
     disconnectStorage,
     getAvailableStorageOptions,
-    applyBatchEdit,
     refreshStorageAdapter
   } = useItems();
 
@@ -151,13 +147,10 @@ const MediaTracker = () => {
     setSearchTerm,
     setFilterType,
     setSortBy,
-    setSortOrder,
     setFilterRating,
     setFilterMaxRating,
     setFilterHasReview,
     setFilterHasCover,
-    setFilterTags,
-    setFilterStatuses,
     setFilterRecent,
     setFilterStartDate,
     setFilterEndDate,
@@ -165,7 +158,6 @@ const MediaTracker = () => {
     toggleTagFilter,
     toggleStatusFilter,
     clearFilters,
-    cycleFilterType,
     toggleSortOrder
   } = useFilters(items);
 
@@ -177,7 +169,6 @@ const MediaTracker = () => {
     toggleItemSelection,
     selectAll,
     clearSelection,
-    isItemSelected, // Keep for non-rendering uses
     getSelectedItems
   } = useSelection();
 
@@ -332,7 +323,7 @@ const MediaTracker = () => {
       let lastProgressUpdate = Date.now();
       const progressThrottleMs = 100; // Update UI at most every 100ms
 
-      const progressCb = ({ processed, added, total, currentFile, filesCompleted, totalFiles }) => {
+      const progressCb = ({ processed, added, total, currentFile }) => {
         const now = Date.now();
         // Always update on first/last item, otherwise throttle
         const isFirstOrLast = processed === 0 || processed === total;
@@ -626,12 +617,12 @@ const MediaTracker = () => {
     }
 
     // Try multiple strategies for maximum compatibility
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
-    try { document.documentElement && (document.documentElement.scrollTop = 0); } catch (_) { }
-    try { document.body && (document.body.scrollTop = 0); } catch (_) { }
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+    try { document.documentElement && (document.documentElement.scrollTop = 0); } catch { /* ignore */ }
+    try { document.body && (document.body.scrollTop = 0); } catch { /* ignore */ }
     const scrollingEl = document.scrollingElement;
     if (scrollingEl && typeof scrollingEl.scrollTo === 'function') {
-      try { scrollingEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
+      try { scrollingEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
     }
   };
 
@@ -687,18 +678,18 @@ const MediaTracker = () => {
   useEffect(() => {
     if (!showStorageSelector) {
       // Try multiple strategies for maximum compatibility across desktop and mobile
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
-      try { document.documentElement && (document.documentElement.scrollTop = 0); } catch (_) { }
-      try { document.body && (document.body.scrollTop = 0); } catch (_) { }
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+      try { document.documentElement && (document.documentElement.scrollTop = 0); } catch { /* ignore */ }
+      try { document.body && (document.body.scrollTop = 0); } catch { /* ignore */ }
       const scrollingEl = document.scrollingElement;
       if (scrollingEl && typeof scrollingEl.scrollTo === 'function') {
-        try { scrollingEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
+        try { scrollingEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
       }
     }
   }, [showStorageSelector]);
 
   // Keyboard navigation setup
-  const { focusedIndex, focusedId, registerCardRef, isItemFocused, resetFocus } = useKeyboardNavigation({ // focusedId used directly for performance
+  const { focusedId, registerCardRef } = useKeyboardNavigation({ // focusedId used directly for performance
     items: filteredAndSortedItems,
     cardSize,
     storageAdapter,

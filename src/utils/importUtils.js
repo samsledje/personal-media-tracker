@@ -2,6 +2,7 @@ import { parseCSV, detectCSVFormat, mapGoodreadsRow, mapLetterboxdRow, mapGeneri
 import { isDuplicate, normalizeForCompare, normalizeISBNForCompare, sanitizeDisplayString } from './commonUtils.js';
 import { getBookByISBN, OpenLibraryError } from '../services/openLibraryService.js';
 import { getMovieByTitleYear, OMDBError } from '../services/omdbService.js';
+import { getDefaultStatus } from '../constants/index.js';
 import JSZip from 'jszip';
 
 /**
@@ -49,7 +50,7 @@ const processLetterboxdRow = async (row, filename = '', omdbApiKey = null, onPro
 
   // Call progress bridge before OMDb fetch to keep UI responsive
   if (typeof onProgress === 'function') {
-    try { onProgress(); } catch (e) { /* swallow */ }
+    try { onProgress(); } catch (e) { console.warn('onProgress callback threw', e); }
   }
 
   // Skip OMDB enrichment if requested (e.g., after quota exceeded)
@@ -75,7 +76,7 @@ const processLetterboxdRow = async (row, filename = '', omdbApiKey = null, onPro
 
   // Call progress bridge after OMDb fetch
   if (typeof onProgress === 'function') {
-    try { onProgress(); } catch (e) { /* swallow */ }
+    try { onProgress(); } catch (e) { console.warn('onProgress callback threw', e); }
   }
 
   // Ensure type
@@ -439,7 +440,7 @@ export const processCSVImport = async (file, existingItems, saveItem, onProgress
         // Create a progress bridge that injects current counters when invoked
         const progressBridge = (...args) => {
           if (typeof onProgress === 'function') {
-            try { onProgress({ processed, added, total }); } catch (e) { /* swallow */ }
+            try { onProgress({ processed, added, total }); } catch (e) { console.warn('onProgress callback threw', e); }
           }
         };
         try {
@@ -620,7 +621,7 @@ export const processCSVImport = async (file, existingItems, saveItem, onProgress
           year: mergedYear,
           rating: normalizeRating(m.rating || m.Rating || 0),
           tags: m.tags || [],
-          status: m.status || 'unread',
+          status: m.status || getDefaultStatus(m.type || 'book'),
           coverUrl: mergedCover,
           dateRead: m.dateRead || '',
           dateWatched: m.dateWatched || '',

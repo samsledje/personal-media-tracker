@@ -1,16 +1,7 @@
 // Markdown parsing and generation utilities
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { STATUS_TYPES } from '../constants/index.js';
-
-/**
- * Get default status for item type (for backward compatibility)
- * @param {string} type - Item type ('book' or 'movie')
- * @returns {string} Default status value
- */
-const getDefaultStatus = (type) => {
-  return type === 'book' ? STATUS_TYPES.BOOK.READ : STATUS_TYPES.MOVIE.WATCHED;
-};
+import { getDefaultStatus } from '../constants/index.js';
 
 /**
  * Parse markdown content with YAML frontmatter
