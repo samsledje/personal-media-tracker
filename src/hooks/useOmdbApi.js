@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getConfig, saveConfig, hasApiKey } from '../config.js';
+import { useState, useEffect, useCallback } from 'react';
+import { getConfig, saveConfig } from '../config.js';
 import { loadAllSettings, saveAllSettings } from '../services/configService.js';
 
 
@@ -44,26 +44,27 @@ export const useOmdbApi = (storage = null) => {
     }
   }, [storage]);
 
-  const updateApiKey = (key) => {
+  const updateApiKey = useCallback((key) => {
     setOmdbApiKey(key);
     saveConfig({ omdbApiKey: key });
     if (storage && storage.isConnected()) {
       saveAllSettings(storage, { omdbApiKey: key }).catch(err => console.warn('Error saving OMDb API key to file:', err));
     }
-  };
+  }, [storage]);
 
-  const updateTmdbApiKey = (key) => {
+  const updateTmdbApiKey = useCallback((key) => {
     setTmdbApiKey(key);
     saveConfig({ tmdbApiKey: key });
     if (storage && storage.isConnected()) {
       saveAllSettings(storage, { tmdbApiKey: key }).catch(err => console.warn('Error saving TMDB API key to file:', err));
     }
-  };
+  }, [storage]);
 
   return {
     omdbApiKey,
     updateApiKey,
-    hasApiKey: hasApiKey(),
+    // Derive from reactive state so this updates when the key changes
+    hasApiKey: Boolean(omdbApiKey),
     tmdbApiKey,
     updateTmdbApiKey,
   };

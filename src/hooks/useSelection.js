@@ -38,7 +38,7 @@ export const useSelection = () => {
    * Select all items
    */
   const selectAll = (items) => {
-    setSelectedIds(new Set(items.map(item => item.id)));
+    setSelectedIds(new Set((items || []).map(item => item.id)));
   };
 
   /**
