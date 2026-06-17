@@ -5,6 +5,11 @@ import { afterEach, vi } from 'vitest';
 // Cleanup after each test case
 afterEach(() => {
   cleanup();
+  // Clear the shared in-memory localStorage so state does not leak between
+  // tests/files (a documented source of full-suite flakiness).
+  if (global.localStorage && typeof global.localStorage.clear === 'function') {
+    global.localStorage.clear();
+  }
 });
 
 // Mock window.matchMedia

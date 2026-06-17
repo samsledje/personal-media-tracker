@@ -17,7 +17,9 @@ The app is **AI agent written** with human oversight. Keeping this file accurate
 | Icons | lucide-react |
 | Unit/integration tests | Vitest 3 + @testing-library/react |
 | E2E | Playwright (stubs only — not relied upon) |
-| Markdown parsing | marked + DOMPurify |
+| Markdown rendering | marked + DOMPurify |
+| YAML frontmatter | js-yaml (parse + dump) |
+| CSV parsing | papaparse (parse + unparse) |
 | Fuzzy search | fuse.js |
 | ZIP export | jszip |
 | Book search API | Open Library (no key required) |
@@ -51,7 +53,8 @@ src/
 │   ├── useTheme.js         # Colors + card size (localStorage-backed)
 │   ├── useKeyboardNavigation.js  # Grid nav + keyboard shortcuts
 │   ├── useOmdbApi.js       # OMDb API key state
-│   └── useHalfStars.js     # Half-star rating toggle
+│   ├── useHalfStars.js     # Half-star rating toggle
+│   └── useToast.js         # ToastContext + useToast() (provided by ToastProvider)
 ├── services/
 │   ├── storageAdapter.js          # Abstract base class (interface only)
 │   ├── fileSystemStorage.js       # File System Access API implementation
@@ -77,7 +80,8 @@ src/
 │   └── statusUtils.jsx     # (see above)
 ├── constants/
 │   ├── index.js            # STATUS_LABELS, STATUS_ICONS, STATUS_COLORS, STATUS_TYPES,
-│   │                       #   CARD_SIZES, FILTER_TYPES, SORT_OPTIONS, KEYBOARD_SHORTCUTS
+│   │                       #   getDefaultStatus(), CARD_SIZES, FILTER_TYPES, SORT_OPTIONS,
+│   │                       #   KEYBOARD_SHORTCUTS
 │   └── colors.js           # PRIMARY_COLOR_PRESETS, HIGHLIGHT_COLOR_PRESETS
 └── test/
     ├── setup.js            # Global mocks: localStorage, matchMedia, showDirectoryPicker, indexedDB
@@ -185,7 +189,7 @@ These are enforced in CI. If your changes drop coverage below these, the build f
 
 ### Known Pre-existing Issues
 
-- **Test isolation flakiness**: Some tests fail when run in the full suite but pass in isolation. This is a mock leak problem, not a logic bug. The `localStorage` mock in `setup.js` is shared and not cleared between test files by default.
+- **Test isolation flakiness**: A few integration tests (notably `itemManagement.test.jsx`) can still flake under full-suite load even though they pass in isolation. The shared `localStorage` mock in `setup.js` is now cleared in a global `afterEach`, which removes the main state-leak source; if you see a remaining flake, suspect resource contention rather than a logic bug.
 - **Playwright E2E stubs**: All 6 spec files in `tests/e2e/` are placeholder stubs. The `e2e-smoke` CI job has been removed — Playwright is not run in CI. Use Vitest integration tests for regression coverage instead.
 
 ### How to Write a New Test
@@ -260,10 +264,10 @@ Add to `src/constants/index.js` and export it. Import from there — do not defi
 ## Before Opening a PR
 
 ```bash
-npm run lint              # must pass (613 pre-existing errors are known — don't add new ones)
+npm run lint              # ~101 known problems remain (96 errors / 5 warnings) — don't add new ones
 npm run test -- --run     # all tests must pass
 npm run test:coverage     # coverage thresholds must be met
 npm run build             # must build without errors
 ```
 
-The lint baseline has 613 pre-existing errors (mostly unused vars in `MediaTracker.jsx`). Do not suppress them with eslint-disable comments — fix them or leave them if they're pre-existing. Do not add new lint errors.
+The lint baseline is ~101 problems (mostly remaining unused vars and missing-dependency warnings in `MediaTracker.jsx` and the large modals). Do not suppress them with eslint-disable comments — fix them or leave them if they're pre-existing. Do not add new lint errors.
