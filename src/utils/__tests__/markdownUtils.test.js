@@ -147,18 +147,32 @@ Notes.`;
       expect(result.metadata.status).toBe('reading');
     });
 
-    it('should handle frontmatter with quotes', () => {
+    it('should preserve quotes inside properly-escaped frontmatter', () => {
       const markdown = `---
-title: "The "Great" Gatsby"
+title: "The \\"Great\\" Gatsby"
 author: 'F. Scott Fitzgerald'
 ---
 
 Notes.`;
 
       const result = parseMarkdown(markdown);
-      
-      expect(result.metadata.title).toBe('The Great Gatsby');
+
+      expect(result.metadata.title).toBe('The "Great" Gatsby');
       expect(result.metadata.author).toBe('F. Scott Fitzgerald');
+    });
+
+    it('should preserve commas inside array values', () => {
+      const markdown = `---
+title: "Test Movie"
+type: "movie"
+actors: ["Smith, John", "Doe, Jane"]
+---
+
+Notes.`;
+
+      const result = parseMarkdown(markdown);
+
+      expect(result.metadata.actors).toEqual(['Smith, John', 'Doe, Jane']);
     });
   });
 
@@ -181,8 +195,8 @@ Notes.`;
       
       expect(markdown).toContain('---');
       expect(markdown).toContain('title: "Test Book"');
-      expect(markdown).toContain('type: book');
-      expect(markdown).toContain('status: read');
+      expect(markdown).toContain('type: "book"');
+      expect(markdown).toContain('status: "read"');
       expect(markdown).toContain('author: "Test Author"');
       expect(markdown).toContain('rating: 5');
       expect(markdown).toContain('year: 1925');
@@ -210,8 +224,8 @@ Notes.`;
       const markdown = generateMarkdown(item);
       
       expect(markdown).toContain('title: "Test Movie"');
-      expect(markdown).toContain('type: movie');
-      expect(markdown).toContain('status: watched');
+      expect(markdown).toContain('type: "movie"');
+      expect(markdown).toContain('status: "watched"');
       expect(markdown).toContain('director: "Test Director"');
       expect(markdown).toContain('actors: ["Actor One", "Actor Two"]');
       expect(markdown).toContain('rating: 4');
@@ -229,8 +243,8 @@ Notes.`;
       const markdown = generateMarkdown(item);
       
       expect(markdown).toContain('title: "Minimal Item"');
-      expect(markdown).toContain('type: book');
-      expect(markdown).toContain('status: read'); // Default status
+      expect(markdown).toContain('type: "book"');
+      expect(markdown).toContain('status: "read"'); // Default status
       expect(markdown).toContain('dateAdded: "2024-01-01"');
       expect(markdown).not.toContain('author:');
       expect(markdown).not.toContain('rating:');
@@ -244,8 +258,8 @@ Notes.`;
       };
 
       const markdown = generateMarkdown(item);
-      
-      expect(markdown).toContain('status: read');
+
+      expect(markdown).toContain('status: "read"');
     });
 
     it('should add default status for movie when missing', () => {
@@ -256,8 +270,8 @@ Notes.`;
       };
 
       const markdown = generateMarkdown(item);
-      
-      expect(markdown).toContain('status: watched');
+
+      expect(markdown).toContain('status: "watched"');
     });
 
     it('should handle empty tags array', () => {
@@ -321,8 +335,11 @@ Notes.`;
       };
 
       const markdown = generateMarkdown(item);
-      
-      expect(markdown).toContain('title: "Book: "A Story""');
+
+      // Quotes inside the value are escaped to keep the frontmatter valid YAML
+      expect(markdown).toContain('title: "Book: \\"A Story\\""');
+      // ...and it must round-trip back to the original title
+      expect(parseMarkdown(markdown).metadata.title).toBe('Book: "A Story"');
     });
   });
 
@@ -353,6 +370,27 @@ Notes.`;
       expect(parsed.metadata.tags).toEqual(original.tags);
       expect(parsed.body).toBe(original.review);
     });
+
+    it('should round-trip values containing quotes, commas, and colons', () => {
+      const original = {
+        title: 'Dune: Part "Two", Revisited',
+        type: 'movie',
+        status: 'watched',
+        director: 'Villeneuve, Denis',
+        actors: ['Chalamet, Timothée', 'Zendaya'],
+        tags: ['sci-fi', 'epic: space'],
+        dateAdded: '2024-03-01',
+        review: 'Great: a "must", really.',
+      };
+
+      const parsed = parseMarkdown(generateMarkdown(original));
+
+      expect(parsed.metadata.title).toBe(original.title);
+      expect(parsed.metadata.director).toBe(original.director);
+      expect(parsed.metadata.actors).toEqual(original.actors);
+      expect(parsed.metadata.tags).toEqual(original.tags);
+      expect(parsed.body).toBe(original.review);
+    });
   });
 
   describe('edge cases', () => {
@@ -365,9 +403,9 @@ Notes.`;
 
       const markdown = generateMarkdown(item);
       const parsed = parseMarkdown(markdown);
-      
-      // Quotes are stripped during parsing, but other special chars preserved
-      expect(parsed.metadata.title).toBe('Book: A Story / Path\\To\\File');
+
+      // Quotes and other special characters now round-trip losslessly
+      expect(parsed.metadata.title).toBe('Book: "A Story" / Path\\To\\File');
     });
 
     it('should handle very long titles', () => {

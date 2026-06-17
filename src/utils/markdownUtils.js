@@ -1,7 +1,23 @@
 // Markdown parsing and generation utilities
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import yaml from 'js-yaml';
 import { getDefaultStatus } from '../constants/index.js';
+
+const FRONTMATTER_REGEX = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/;
+
+/**
+ * Normalize a parsed YAML value to the string-based shape the rest of the app
+ * expects: scalars become strings, arrays become arrays of strings, and
+ * null/undefined become empty strings. js-yaml types numbers/booleans, but
+ * historically metadata values were always strings, so we preserve that.
+ */
+const normalizeMetaValue = (value) => {
+  if (Array.isArray(value)) return value.map(v => (v == null ? '' : String(v)));
+  if (value == null) return '';
+  if (typeof value === 'object') return value; // unexpected, but don't lose it
+  return String(value);
+};
 
 /**
  * Parse markdown content with YAML frontmatter
@@ -9,36 +25,33 @@ import { getDefaultStatus } from '../constants/index.js';
  * @returns {object} Object with metadata and body
  */
 export const parseMarkdown = (content) => {
-  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-  const match = content.match(frontmatterRegex);
-  
+  const match = content.match(FRONTMATTER_REGEX);
+
   if (!match) return { metadata: {}, body: content };
-  
+
+  const body = match[2].trim();
+
+  let parsed;
+  try {
+    parsed = yaml.load(match[1]);
+  } catch {
+    // Malformed frontmatter — degrade gracefully rather than throw.
+    return { metadata: {}, body };
+  }
+
   const metadata = {};
-  const yamlLines = match[1].split('\n').filter(line => line.trim() !== '');
-  
-  yamlLines.forEach(line => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > -1) {
-      const key = line.substring(0, colonIndex).trim();
-      let value = line.substring(colonIndex + 1).trim();
-      
-      if (value.startsWith('[') && value.endsWith(']')) {
-        value = value.slice(1, -1).split(',').map(v => v.trim().replace(/['"]/g, ''));
-      } else {
-        value = value.replace(/['"]/g, '');
-      }
-      
-      metadata[key] = value;
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    for (const [key, value] of Object.entries(parsed)) {
+      metadata[key] = normalizeMetaValue(value);
     }
-  });
+  }
 
   // Add default status for backward compatibility if not present
   if (!metadata.status && metadata.type) {
     metadata.status = getDefaultStatus(metadata.type);
   }
-  
-  return { metadata, body: match[2].trim() };
+
+  return { metadata, body };
 };
 
 /**
@@ -47,29 +60,37 @@ export const parseMarkdown = (content) => {
  * @returns {string} Markdown content with frontmatter
  */
 export const generateMarkdown = (item) => {
-  let yaml = '---\n';
-  yaml += `title: "${item.title}"\n`;
-  yaml += `type: ${item.type}\n`;
-  
-  // Add status field with default if not present
-  const status = item.status || getDefaultStatus(item.type);
-  yaml += `status: ${status}\n`;
-  
-  if (item.author) yaml += `author: "${item.author}"\n`;
-  if (item.director) yaml += `director: "${item.director}"\n`;
-  if (item.actors) yaml += `actors: [${item.actors.map(a => `"${a}"`).join(', ')}]\n`;
-  if (item.isbn) yaml += `isbn: "${item.isbn}"\n`;
-  if (item.year) yaml += `year: ${item.year}\n`;
-  if (item.rating) yaml += `rating: ${item.rating}\n`;
-  if (item.tags && item.tags.length > 0) yaml += `tags: [${item.tags.map(t => `"${t}"`).join(', ')}]\n`;
-  if (item.coverUrl) yaml += `coverUrl: "${item.coverUrl}"\n`;
-  
-  if (item.dateRead) yaml += `dateRead: "${item.dateRead}"\n`;
-  if (item.dateWatched) yaml += `dateWatched: "${item.dateWatched}"\n`;
-  yaml += `dateAdded: "${item.dateAdded}"\n`;
-  yaml += '---\n\n';
-  
-  return yaml + (item.review || '');
+  // Build the frontmatter object in a stable field order, including only the
+  // fields that are present (matching the historical output).
+  const frontmatter = {
+    title: item.title,
+    type: item.type,
+    status: item.status || getDefaultStatus(item.type)
+  };
+
+  if (item.author) frontmatter.author = item.author;
+  if (item.director) frontmatter.director = item.director;
+  if (item.actors) frontmatter.actors = item.actors;
+  if (item.isbn) frontmatter.isbn = item.isbn;
+  if (item.year) frontmatter.year = item.year;
+  if (item.rating) frontmatter.rating = item.rating;
+  if (item.tags && item.tags.length > 0) frontmatter.tags = item.tags;
+  if (item.coverUrl) frontmatter.coverUrl = item.coverUrl;
+  if (item.dateRead) frontmatter.dateRead = item.dateRead;
+  if (item.dateWatched) frontmatter.dateWatched = item.dateWatched;
+  frontmatter.dateAdded = item.dateAdded;
+
+  // forceQuotes + double quotes -> string values are safely escaped;
+  // flowLevel: 1 keeps arrays inline (tags: ["a", "b"]); lineWidth: -1
+  // prevents js-yaml from wrapping long values across lines.
+  const dumped = yaml.dump(frontmatter, {
+    flowLevel: 1,
+    forceQuotes: true,
+    quotingType: '"',
+    lineWidth: -1
+  });
+
+  return `---\n${dumped}---\n\n${item.review || ''}`;
 };
 
 /**
