@@ -12,6 +12,15 @@ export const isTyping = () => {
 };
 
 /**
+ * Parse a comma-separated tag string into a clean array of non-empty,
+ * trimmed tags.
+ * @param {string} value - Comma-separated tag string
+ * @returns {string[]} Array of trimmed, non-empty tags
+ */
+export const parseTagList = (value) =>
+  (value || '').split(',').map(s => s.trim()).filter(Boolean);
+
+/**
  * Generate a filename for an item
  * @param {string} title - Item title
  * @returns {string} Generated filename
