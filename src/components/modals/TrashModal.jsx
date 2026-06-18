@@ -92,10 +92,15 @@ const TrashModal = ({ storageAdapter, onClose, onRestore }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg max-w-4xl w-full p-6 mt-4 mb-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trash-modal-title"
+        className="bg-slate-800 border border-slate-700 rounded-lg max-w-4xl w-full p-6 mt-4 mb-4 max-h-[calc(100vh-2rem)] overflow-y-auto"
+      >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold">Trash</h2>
+            <h2 id="trash-modal-title" className="text-xl font-bold">Trash</h2>
             <p className="text-sm text-slate-400 mt-1">
               {trashedItems.length} {trashedItems.length === 1 ? 'item' : 'items'} in trash
             </p>

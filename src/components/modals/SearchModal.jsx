@@ -241,10 +241,15 @@ const SearchModal = ({ onClose, onSelect }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg w-full h-full sm:max-w-4xl sm:w-full sm:max-h-[90vh] sm:h-auto overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="search-modal-title"
+        className="bg-slate-800 border border-slate-700 rounded-lg w-full h-full sm:max-w-4xl sm:w-full sm:max-h-[90vh] sm:h-auto overflow-y-auto"
+      >
         <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg sm:text-xl font-bold">Search Books & Movies</h2>
+            <h2 id="search-modal-title" className="text-lg sm:text-xl font-bold">Search Books & Movies</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-slate-700 rounded transition min-h-[44px] min-w-[44px] flex items-center justify-center"

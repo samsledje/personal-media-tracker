@@ -423,4 +423,33 @@ describe('ItemCard', () => {
       expect(title.textContent).toBe(longTitle);
     });
   });
+
+  describe('accessibility', () => {
+    it('should expose the card as a button with a descriptive label', () => {
+      render(<ItemCard {...defaultProps} />);
+
+      const card = screen.getByRole('button', { name: /The Great Gatsby/i });
+      expect(card).toBeInTheDocument();
+      expect(card).toHaveAttribute('aria-label', expect.stringContaining('F. Scott Fitzgerald'));
+    });
+
+    it('should reflect selection state via aria-pressed in selection mode', () => {
+      const props = {
+        ...defaultProps,
+        selectionMode: true,
+        selectedIds: new Set([sampleBook.id])
+      };
+      render(<ItemCard {...props} />);
+
+      const card = screen.getByRole('button', { name: /The Great Gatsby/i });
+      expect(card).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('should not set aria-pressed when not in selection mode', () => {
+      render(<ItemCard {...defaultProps} />);
+
+      const card = screen.getByRole('button', { name: /The Great Gatsby/i });
+      expect(card).not.toHaveAttribute('aria-pressed');
+    });
+  });
 });

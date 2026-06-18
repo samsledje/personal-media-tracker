@@ -27,18 +27,23 @@ const GoogleDriveConfigModal = ({ onClose, onConnect }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-lg border border-slate-600 w-full max-w-md">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gdriveconfig-modal-title"
+        className="bg-slate-800 rounded-lg border border-slate-600 w-full max-w-md"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-600">
           <div className="flex items-center gap-3">
-            <div 
+            <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
               style={{ backgroundColor: 'var(--mt-highlight-alpha)' }}
             >
               <FolderOpen className="w-5 h-5" style={{ color: 'var(--mt-highlight)' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">Configure Google Drive</h3>
+              <h3 id="gdriveconfig-modal-title" className="text-lg font-semibold text-white">Configure Google Drive</h3>
               <p className="text-sm text-slate-400">Choose your folder name</p>
             </div>
           </div>
