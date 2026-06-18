@@ -128,11 +128,12 @@ describe('StarRating', () => {
       expect(ghostStars).toHaveLength(3); // Stars 0, 1, 2 should be ghost filled
     });
 
-    it('should show ghost half star preview when hovering left side with half stars enabled', () => {
-      // Skip this test for now as mouse coordinate testing is complex
-      // The hover ghosting functionality is tested by other tests
-      expect(true).toBe(true);
-    });    it('should only show full star ghost previews when half stars disabled', async () => {
+    // Skipped: asserting half-star hover requires precise mouse-coordinate
+    // simulation that userEvent doesn't model well. The half-star ghosting is
+    // exercised indirectly by the surrounding hover tests.
+    it.skip('should show ghost half star preview when hovering left side with half stars enabled', () => {});
+
+    it('should only show full star ghost previews when half stars disabled', async () => {
       const user = userEvent.setup();
       const { container } = render(<StarRating rating={0} interactive={true} halfStarsEnabled={false} />);
       const buttons = screen.getAllByRole('button');
