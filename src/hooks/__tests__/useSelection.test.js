@@ -155,6 +155,16 @@ describe('useSelection', () => {
       expect(result.current.selectedCount).toBe(0);
     });
 
+    it('should not throw when called with undefined', () => {
+      const { result } = renderHook(() => useSelection());
+
+      act(() => {
+        result.current.selectAll(undefined);
+      });
+
+      expect(result.current.selectedCount).toBe(0);
+    });
+
     it('should override previous selections', () => {
       const { result } = renderHook(() => useSelection());
 

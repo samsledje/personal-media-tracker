@@ -654,8 +654,10 @@ const MediaTracker = () => {
     const updateHeaderHeight = () => {
       if (headerRef.current) {
         const height = headerRef.current.offsetHeight;
-        if (height > 0 && height !== headerHeight) {
-          setHeaderHeight(height);
+        if (height > 0) {
+          // Functional update avoids depending on headerHeight, so the effect
+          // doesn't re-subscribe the ResizeObserver/listener on every height change.
+          setHeaderHeight(prev => (prev !== height ? height : prev));
         }
       }
     };
@@ -679,7 +681,7 @@ const MediaTracker = () => {
       }
       window.removeEventListener('resize', updateHeaderHeight);
     };
-  }, [headerHeight]);
+  }, []);
 
 
 

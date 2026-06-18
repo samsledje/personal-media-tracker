@@ -134,8 +134,32 @@ describe('useOmdbApi', () => {
 
   it('should return hasApiKey boolean', () => {
     const { result } = renderHook(() => useOmdbApi());
-    
+
     expect(typeof result.current.hasApiKey).toBe('boolean');
+  });
+
+  it('should derive hasApiKey reactively from the current key state', async () => {
+    getConfig.mockReturnValue('');
+
+    const { result } = renderHook(() => useOmdbApi());
+
+    expect(result.current.hasApiKey).toBe(false);
+
+    act(() => {
+      result.current.updateApiKey('reactive-key');
+    });
+
+    await waitFor(() => {
+      expect(result.current.hasApiKey).toBe(true);
+    });
+
+    act(() => {
+      result.current.updateApiKey('');
+    });
+
+    await waitFor(() => {
+      expect(result.current.hasApiKey).toBe(false);
+    });
   });
 
   it('should maintain API key state across re-renders', async () => {
