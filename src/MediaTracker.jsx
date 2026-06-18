@@ -540,20 +540,9 @@ const MediaTracker = () => {
     }
   };
 
-  // Track storage indicator state
+  // Track storage indicator state (updated reactively via StorageIndicator's
+  // onOpenChange callback — see the <StorageIndicator> render below).
   const [storageIndicatorOpen, setStorageIndicatorOpen] = useState(false);
-
-  // Update storage indicator state when it changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (storageIndicatorRef.current) {
-        const isOpen = storageIndicatorRef.current.isOpen();
-        setStorageIndicatorOpen(isOpen);
-      }
-    }, 100); // Check every 100ms
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Cleanup export submenu timeout on unmount
   useEffect(() => {
@@ -1683,6 +1672,7 @@ const MediaTracker = () => {
             storageAdapter={storageAdapter}
             storageInfo={storageInfo}
             onSwitchStorage={handleDisconnectStorage}
+            onOpenChange={setStorageIndicatorOpen}
             onRefresh={() => loadItems()}
           />
         )}

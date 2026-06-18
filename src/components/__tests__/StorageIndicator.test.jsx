@@ -120,6 +120,24 @@ describe('StorageIndicator', () => {
       expect(screen.getByText('Connected')).toBeInTheDocument();
     });
 
+    it('should report open state changes via onOpenChange', async () => {
+      const onOpenChange = vi.fn();
+      render(
+        <StorageIndicator
+          storageAdapter={mockStorageAdapter}
+          storageInfo="/path/to/folder"
+          onSwitchStorage={onSwitchStorage}
+          onOpenChange={onOpenChange}
+        />
+      );
+
+      // Called with false on mount
+      expect(onOpenChange).toHaveBeenLastCalledWith(false);
+
+      await user.click(screen.getByTitle('Storage: Local Files'));
+      expect(onOpenChange).toHaveBeenLastCalledWith(true);
+    });
+
     it('should close panel when backdrop is clicked', async () => {
       render(
         <StorageIndicator 

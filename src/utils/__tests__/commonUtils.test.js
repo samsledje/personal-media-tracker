@@ -1,7 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { isTyping, isMobileScreen, getTodayDate, autoUpdateDateOnStatusChange } from '../commonUtils.js';
+import { isTyping, isMobileScreen, getTodayDate, autoUpdateDateOnStatusChange, parseTagList } from '../commonUtils.js';
 
 describe('commonUtils', () => {
+  describe('parseTagList', () => {
+    it('should split, trim, and drop empty tags', () => {
+      expect(parseTagList(' fiction , classic ,, sci-fi ')).toEqual(['fiction', 'classic', 'sci-fi']);
+    });
+
+    it('should return an empty array for empty or nullish input', () => {
+      expect(parseTagList('')).toEqual([]);
+      expect(parseTagList(null)).toEqual([]);
+      expect(parseTagList(undefined)).toEqual([]);
+    });
+  });
+
   describe('isTyping', () => {
     it('should return true when user is typing in an input', () => {
       // Mock document.activeElement

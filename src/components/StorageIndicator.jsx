@@ -5,7 +5,7 @@ import { Cloud, FolderOpen, Folder, User, Wifi, WifiOff, ArrowLeft } from 'lucid
  * Compact Storage Indicator Component
  * Shows storage status in bottom right, expandable on click
  */
-const StorageIndicator = forwardRef(({ storageAdapter, storageInfo, onSwitchStorage }, ref) => {
+const StorageIndicator = forwardRef(({ storageAdapter, storageInfo, onSwitchStorage, onOpenChange }, ref) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Expose methods to parent component
@@ -15,6 +15,12 @@ const StorageIndicator = forwardRef(({ storageAdapter, storageInfo, onSwitchStor
     toggleModal: () => setIsExpanded(prev => !prev),
     isOpen: () => isExpanded
   }));
+
+  // Notify the parent whenever the open state changes, so it can react without
+  // polling the imperative handle.
+  useEffect(() => {
+    onOpenChange?.(isExpanded);
+  }, [isExpanded, onOpenChange]);
 
   // Handle keyboard shortcuts when modal is open
   useEffect(() => {

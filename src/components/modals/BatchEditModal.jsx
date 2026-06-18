@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { STATUS_TYPES, STATUS_LABELS } from '../../constants/index.js';
 import { toast } from '../../services/toastService.js';
+import { parseTagList } from '../../utils/commonUtils.js';
 
 /**
  * Modal for batch editing multiple selected items
@@ -40,13 +41,12 @@ const BatchEditModal = ({ onClose, onApply, selectedItems = [], isProcessing = f
     if (applyAddTags && addTagsStr) {
       out.after.tags = Array.from(new Set([
         ...(out.after.tags || []),
-        ...addTagsStr.split(',').map(s => s.trim()).filter(Boolean)
+        ...parseTagList(addTagsStr)
       ]));
     }
     if (applyRemoveTags && removeTagsStr) {
-      out.after.tags = (out.after.tags || []).filter(t =>
-        !removeTagsStr.split(',').map(s => s.trim()).filter(Boolean).includes(t)
-      );
+      const toRemove = parseTagList(removeTagsStr);
+      out.after.tags = (out.after.tags || []).filter(t => !toRemove.includes(t));
     }
     if (applyDateRead && dateRead) out.after.dateRead = dateRead;
     if (applyDateWatched && dateWatched) out.after.dateWatched = dateWatched;
@@ -61,8 +61,8 @@ const BatchEditModal = ({ onClose, onApply, selectedItems = [], isProcessing = f
     if (applyDirector) changes.director = director;
     if (applyYear) changes.year = year;
     if (applyRating) changes.rating = rating;
-    if (applyAddTags) changes.addTags = addTagsStr ? addTagsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
-    if (applyRemoveTags) changes.removeTags = removeTagsStr ? removeTagsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (applyAddTags) changes.addTags = parseTagList(addTagsStr);
+    if (applyRemoveTags) changes.removeTags = parseTagList(removeTagsStr);
     if (applyDateRead) changes.dateRead = dateRead;
     if (applyDateWatched) changes.dateWatched = dateWatched;
     if (applyStatus) changes.status = status;
