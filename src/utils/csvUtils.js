@@ -1,3 +1,4 @@
+import Papa from 'papaparse';
 import { CSV_FORMATS, STATUS_TYPES, getDefaultStatus } from '../constants/index.js';
 import { toast } from '../services/toastService.js';
 
@@ -129,56 +130,18 @@ export { mapLetterboxdWatchedToStatus };
  * @returns {object} Object with headers array and rows array
  */
 export const parseCSV = (text) => {
-  // Basic RFC4180-compatible CSV parser (handles quoted fields)
-  const rows = [];
-  let cur = '';
-  let row = [];
-  let inQuotes = false;
-  
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    const nxt = text[i + 1];
+  // Delegate the RFC 4180 tokenizing (quotes, escaped quotes, embedded commas
+  // and newlines, BOM, CRLF) to papaparse. Headers and values are trimmed to
+  // preserve the historical behavior of this function.
+  const result = Papa.parse(text, {
+    header: true,
+    skipEmptyLines: 'greedy',
+    transformHeader: (h) => h.trim(),
+    transform: (v) => (typeof v === 'string' ? v.trim() : v)
+  });
 
-    if (ch === '"') {
-      if (inQuotes && nxt === '"') { // escaped quote
-        cur += '"';
-        i++; // skip next
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === ',' && !inQuotes) {
-      row.push(cur);
-      cur = '';
-    } else if ((ch === '\n' || (ch === '\r' && nxt === '\n')) && !inQuotes) {
-      // handle CRLF or LF
-      if (ch === '\r' && nxt === '\n') i++;
-      row.push(cur);
-      rows.push(row);
-      row = [];
-      cur = '';
-    } else {
-      cur += ch;
-    }
-  }
-  
-  // push last
-  if (cur !== '' || row.length > 0) {
-    row.push(cur);
-    rows.push(row);
-  }
-
-  if (rows.length === 0) return { headers: [], rows: [] };
-
-  const headers = rows[0].map(h => h.trim());
-  const dataRows = rows.slice(1).map(r => {
-    const obj = {};
-    for (let i = 0; i < headers.length; i++) {
-      obj[headers[i]] = r[i] !== undefined ? r[i].trim() : '';
-    }
-    return obj;
-  }).filter(r => Object.values(r).some(v => v !== ''));
-
-  return { headers, rows: dataRows };
+  const headers = (result.meta.fields || []).map(h => h.trim());
+  return { headers, rows: result.data };
 };
 
 /**
@@ -297,24 +260,21 @@ export const exportCSV = (items = []) => {
       'dateRead', 'dateWatched', 'dateAdded', 'tags', 'coverUrl', 'review', 'filename'
     ];
 
-    const escape = (s) => {
-      if (s === null || s === undefined) return '""';
-      const str = String(Array.isArray(s) ? s.join(';') : s);
-      return '"' + str.replace(/"/g, '""') + '"';
+    const cell = (it, h) => {
+      switch (h) {
+        case 'actors': return (it.actors || []).join(';');
+        case 'tags': return (it.tags || []).join(';');
+        case 'filename': return it.filename || '';
+        case 'dateRead': return it.dateRead || '';
+        case 'dateWatched': return it.dateWatched || '';
+        default: return it[h] ?? '';
+      }
     };
 
-    const rows = items.map(it => headers.map(h => {
-      switch (h) {
-        case 'actors': return escape(it.actors || []);
-        case 'tags': return escape(it.tags || []);
-        case 'filename': return escape(it.filename || '');
-        case 'dateRead': return escape(it.dateRead || '');
-        case 'dateWatched': return escape(it.dateWatched || '');
-        default: return escape(it[h] ?? '');
-      }
-    }).join(',')).join('\n');
-
-    const csv = headers.join(',') + '\n' + rows;
+    const data = items.map(it => headers.map(h => cell(it, h)));
+    // quotes: true keeps every field quoted (parity with the previous export);
+    // papaparse handles escaping of embedded quotes/commas/newlines.
+    const csv = Papa.unparse({ fields: headers, data }, { quotes: true });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
