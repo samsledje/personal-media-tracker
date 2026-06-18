@@ -3,10 +3,10 @@ import { X, Save, ChevronDown, Edit, Trash2 } from 'lucide-react';
 import EditForm from '../forms/EditForm.jsx';
 import ViewDetails from '../cards/ViewDetails.jsx';
 import { STATUS_TYPES, KEYBOARD_SHORTCUTS } from '../../constants/index.js';
-import { STATUS_LABELS, STATUS_ICONS, STATUS_COLORS } from '../../constants/index.js';
-import { Bookmark, BookOpen, CheckCircle, PlayCircle, Layers, XCircle } from 'lucide-react';
+import { STATUS_LABELS } from '../../constants/index.js';
 import { fetchCoverForItem } from '../../utils/coverUtils.js';
 import { getStatusColor } from '../../utils/colorUtils.js';
+import { getStatusIcon } from '../../utils/statusUtils.jsx';
 import { toast } from '../../services/toastService.js';
 import StarRating from '../StarRating.jsx';
 import { useHalfStars } from '../../hooks/useHalfStars.js';
@@ -122,26 +122,6 @@ const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRg
       }
     } finally {
       setIsFetchingCover(false);
-    }
-  };
-
-  const getIconForStatus = (status, className = '') => {
-    const iconType = STATUS_ICONS[status];
-    switch (iconType) {
-      case 'bookmark':
-        return <Bookmark className={className} />;
-      case 'book-open':
-        return <BookOpen className={className} />;
-      case 'check-circle':
-        return <CheckCircle className={className} />;
-      case 'play-circle':
-        return <PlayCircle className={className} />;
-      case 'layers':
-        return <Layers className={className} />;
-      case 'x-circle':
-        return <XCircle className={className} />;
-      default:
-        return <Bookmark className={className} />;
     }
   };
 
@@ -320,7 +300,7 @@ const ItemDetailModal = ({ item, onClose, onSave, onDelete, onQuickSave, hexToRg
                 onStatusChange={handleStatusClick}
                 currentStatus={editedItem.status}
                 getStatusColor={getStatusColor}
-                getStatusIcon={getIconForStatus}
+                getStatusIcon={getStatusIcon}
                 STATUS_LABELS={STATUS_LABELS}
                 halfStarsEnabled={halfStarsEnabled}
                 showStatusMenu={showStatusMenu}

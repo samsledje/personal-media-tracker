@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import { Star, Layers, BookOpen, CheckCircle, PlayCircle, XCircle } from 'lucide-react';
-import { STATUS_LABELS, STATUS_ICONS } from "../../constants";
+import { STATUS_LABELS } from "../../constants";
+import { getStatusIcon } from '../../utils/statusUtils.jsx';
 
 const FilterModal = ({
     // Filter state
@@ -34,27 +34,6 @@ const FilterModal = ({
         setFilterRecent(value);
     }, [setFilterRecent]);
 
-    // Get the appropriate icon component for a status
-    const getStatusIcon = (status) => {
-        const iconName = STATUS_ICONS[status];
-        const iconProps = { className: "w-4 h-4" };
-
-        switch (iconName) {
-            case 'layers':
-                return <Layers {...iconProps} />;
-            case 'book-open':
-                return <BookOpen {...iconProps} />;
-            case 'check-circle':
-                return <CheckCircle {...iconProps} />;
-            case 'play-circle':
-                return <PlayCircle {...iconProps} />;
-            case 'x-circle':
-                return <XCircle {...iconProps} />;
-            default:
-                return <Layers {...iconProps} />;
-        }
-    };
-
     return (
         <>
             {/* Expanded Filters */}
@@ -80,7 +59,7 @@ const FilterModal = ({
                                                 }`}
                                             style={filterStatuses.includes(status) ? { backgroundColor: 'var(--mt-highlight)', color: 'white' } : {}}
                                         >
-                                            {getStatusIcon(status)}
+                                            {getStatusIcon(status, "w-4 h-4")}
                                             {STATUS_LABELS[status]}
                                         </button>
                                     ))

@@ -2,7 +2,8 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { ToastProvider, useToast } from '../ToastProvider.jsx';
+import { ToastProvider } from '../ToastProvider.jsx';
+import { useToast } from '../../hooks/useToast.js';
 import * as toastService from '../../services/toastService.js';
 
 // Mock toastService

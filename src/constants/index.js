@@ -29,6 +29,16 @@ export const STATUS_TYPES = {
   }
 };
 
+/**
+ * Canonical default status for an item type. Used when an item has no status
+ * (e.g. legacy markdown, CSV/import rows). Single source of truth — import this
+ * instead of re-deriving the default inline.
+ * @param {string} type - Item type ('book' or 'movie')
+ * @returns {string} Default status value
+ */
+export const getDefaultStatus = (type) =>
+  type === 'book' ? STATUS_TYPES.BOOK.READ : STATUS_TYPES.MOVIE.WATCHED;
+
 export const STATUS_LABELS = {
   'to-read': 'To Read',
   'reading': 'Reading',

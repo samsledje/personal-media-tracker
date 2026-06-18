@@ -228,7 +228,10 @@ export class FileSystemStorage extends StorageAdapter {
       // Ensure the item object knows its filename so callers can update the same file later
       item.filename = filename;
 
-      const fileExists = await this.fileExists(filename).catch(() => false);
+      const fileExists = await this.fileExists(filename).catch((err) => {
+        console.warn('[Storage][FS] fileExists check failed, assuming new file', filename, err);
+        return false;
+      });
       if (fileExists) {
         console.debug('[Storage][FS] updating existing file', filename);
       } else {

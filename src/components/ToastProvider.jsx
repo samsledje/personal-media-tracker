@@ -1,11 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { registerToast } from '../services/toastService.js';
-
-const ToastContext = createContext(null);
-
-export const useToast = () => {
-  return useContext(ToastContext);
-};
+import { ToastContext } from '../hooks/useToast.js';
 
 let idCounter = 1;
 
